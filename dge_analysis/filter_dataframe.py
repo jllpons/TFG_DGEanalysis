@@ -3,8 +3,7 @@
 import pandas as pd
 
 """
-Dataframe handeling, filtering and sub-dataframe generation form a more complex
-and extensive DGE dataframe.
+Dataframe handeling, filtering and sub-dataframe generation.
 """
 
 

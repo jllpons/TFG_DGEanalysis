@@ -55,6 +55,7 @@ def generate_regulation_countplot(
         plot_name = f"{file_path}_regulation-stats.{format}"
         fig.savefig(plot_name, format=format)
 
+    # Clear current figure
     plt.clf()
 
 
@@ -66,11 +67,14 @@ def generate_volcano_plot(
         foldchange_threshold,
         padj_threshold,
         mutant_name,
-        plot_formats):
+        plot_formats,
+        ):
     """
     Generates a volcano plot with log2 Fold change values on the x axis, and
     log10 padj values on the y axis. Colors values according to the
     corresponding preestablished threshold value for each axis.
+    It also generates a countplot for a better visualization of the amount of
+    genes that have been reported as Up, Down or No sig.
     """
 
     # Calculating the log2 threshold for FoldChange values
@@ -102,12 +106,13 @@ def generate_volcano_plot(
 
     # Replacing UP/DOWN/NO with the same string + the number of instances for
     # each corresponding value in the dataframe.
-    # This is done just to show the value count in the plot's legend.
+    # I just think it looks better if it shows the value count
+    # in the plot's legend.
     up_count = regulation_column.count("UP")
-    up_newname = f"Up ({up_count})"
     down_count = regulation_column.count("DOWN")
-    down_newname = f"Down ({down_count})"
     no_count = regulation_column.count("NO")
+    up_newname = f"Up ({up_count})"
+    down_newname = f"Down ({down_count})"
     no_newname = f"Not sig ({no_count})"
 
     color_column = []
@@ -119,6 +124,7 @@ def generate_volcano_plot(
         elif element == "NO":
             color_column.append(no_newname)
 
+    # Generate a countplot for a better visualization
     generate_regulation_countplot(
             data=color_column,
             file_path=file_path,
@@ -146,8 +152,6 @@ def generate_volcano_plot(
             x=x_axis_values,
             y="-log10(padj)",
             hue="color",
-            # I've used this order to match a more intutive color:
-            # blue for NO, red for DOWN, green for UP
             hue_order=[ down_newname, no_newname, up_newname ],
             palette=("cornflowerblue", "silver", "indianred"),
             )
@@ -202,6 +206,7 @@ def generate_volcano_plot(
     plt.title(f"{mutant_name} vs WT")
 
     fig = volcano.get_figure()
+
     # Create the same plot in each specificed format.
     for format in plot_formats:
         plot_name = file_path + "_volcano." + format
