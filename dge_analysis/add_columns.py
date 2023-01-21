@@ -153,7 +153,7 @@ def create_go_dict(df):
 
         gene_IDs = df["geneID"][i].split("/")
         for gene in gene_IDs:
-            # Some gone have more than one GO annotation.
+            # Some genes have more than one GO annotation.
             if gene in go_dictionary:
                 n_of_go_annotations = len(go_dictionary[gene])
                 go_dictionary[gene][f"go_annotation_{n_of_go_annotations}"] = {
