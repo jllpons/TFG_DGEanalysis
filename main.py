@@ -81,6 +81,10 @@ sub_dataframes = dge_analysis.generate_sub_dataframes(
         mutants_list=MUTANT_SAMPLES
         )
 
+venn_set_dictionary = {}
+venn_set_up_dictionary = {}
+venn_set_down_dictionary = {}
+
 for mutant in MUTANT_SAMPLES:
     # Create a directory with the name of the mutant
     mutant_directory = dge_analysis.mk_new_dir(
@@ -91,7 +95,10 @@ for mutant in MUTANT_SAMPLES:
     mutant_file_name = f"{mutant_directory}/{mutant}"
 
     # Save a ".csv" file of the dataframe.
-    sub_dataframes[mutant].to_csv(f"{mutant_file_name}.csv")
+    sub_dataframes[mutant].to_csv(
+            f"{mutant_file_name}.csv",
+            index=False
+            )
 
     # Get the name of the columns that'll use for filtering the sub-dataframes.
     column_names_to_check = dge_analysis.column_names_to_check(
@@ -109,8 +116,27 @@ for mutant in MUTANT_SAMPLES:
             column_names_to_check=column_names_to_check,
             )
 
+    # Saving a set containing all of the filtered gene names for the
+    # Venn diagram generation.
+    venn_set_dictionary[mutant] = set(sub_dataframe_filtered.gene_id)
+    # Same but only if the gene is considered to be up-regulated
+    venn_set_up_dictionary[mutant] = set(
+            sub_dataframe_filtered[
+                sub_dataframe_filtered[f"{mutant}vsWT_Regulation"] == "Up"
+                ]["gene_id"]
+            )
+    # Same but only if the gene is considered to be down-regulated
+    venn_set_down_dictionary[mutant] = set(
+            sub_dataframe_filtered[
+                sub_dataframe_filtered[f"{mutant}vsWT_Regulation"] == "Down"
+                ]["gene_id"]
+            )
+
     # Save a ".csv" file for the filtered sub-dataframe
-    sub_dataframe_filtered.to_csv(f"{mutant_file_name}_filtered.csv")
+    sub_dataframe_filtered.to_csv(
+            f"{mutant_file_name}_filtered.csv",
+            index=False
+            )
 
     # Generate a volcano and a count plots
     dge_analysis.generate_volcano_plot(
@@ -142,15 +168,99 @@ for mutant in MUTANT_SAMPLES:
                 # The engine to use with ".xls" files according to the documentation.
                 engine="xlrd",
                 )
+# WIP:
+#     # Add Gene Ontology annotations for each gene.
+#     # Multiple annotations on the same gene will be stacked
+#     # and separeded with "/".
+#     sub_dataframe_with_GO_info = dge_analysis.add_go_columns(
+#             df=sub_dataframes[mutant],
+#             go_df=go_df_recovered,
+#             )
+# 
+#     sub_dataframe_with_GO_info.to_csv(
+#             f"{mutant_file_name}_with_GO_info.csv",
+#             index=False
+#             )
+# 
+#     sub_dataframe_filtered_with_GO_info = dge_analysis.filter_FC_PVALUE_PADJ(
+#             dataframe=sub_dataframe_with_GO_info,
+#             foldchange_threshold=FOLD_CHANGE_THRESHOLD,
+#             p_value_threshold=P_VALUE_THRESHOLD,
+#             padj_threshold=PADJ_THRESHOLD,
+#             column_names_to_check=column_names_to_check,
+#             )
+# 
+#     sub_dataframe_filtered_with_GO_info.to_csv(
+#             f"{mutant_file_name}_with_GO_info_filtered.csv",
+#             index=False,
+#             )
+# 
+#     dge_analysis.generate_cooler_volcano_plot(
+#             dataframe=sub_dataframes[mutant],
+#             file_path=mutant_file_name,
+#             x_axis_values=column_names_to_check["log2FoldChange"],
+#             y_axis_values=column_names_to_check["padj"],
+#             foldchange_threshold=FOLD_CHANGE_THRESHOLD,
+#             padj_threshold=PADJ_THRESHOLD,
+#             picked_go_term1="GO:0040011",
+#             picked_go_term2="not now plis",
+#             mutant_name=mutant,
+#             plot_formats=PLOT_FORMATS,
+#             )
+#-------# Loop ends here #-----------------------------------------------------#
 
-    # Add Gene Ontology annotations for each gene.
-    # Multiple annotations on the same gene will be stacked
-    # and separeded with "/".
-    sub_dataframe_with_GO_info = dge_analysis.add_go_columns(
-            df=sub_dataframes[mutant],
-            go_df=go_df_recovered,
-            )
+# Generate 2 venn's diagrams representing all of the differentially expressed
+# genes. One will be defalut, the other will be unweight.
+dge_analysis.generate_venn3_diagram(
+        set1=(venn_set_dictionary[MUTANT_SAMPLES[0]], MUTANT_SAMPLES[0]),
+        set2=(venn_set_dictionary[MUTANT_SAMPLES[1]], MUTANT_SAMPLES[1]),
+        set3=(venn_set_dictionary[MUTANT_SAMPLES[2]], MUTANT_SAMPLES[2]),
+        plot_formats=PLOT_FORMATS,
+        title=f"Diffentientialy expressed genes\n(Fold change > {FOLD_CHANGE_THRESHOLD})",
+        file_name="venn_total_regulation"
+                                  )
 
-    sub_dataframe_with_GO_info.to_csv(f"{mutant_file_name}_with_GO_info.csv")
+# Both up/down_regulation_labels are dictrionaries conaining the labels for the
+# next venn diagrams we're going to generate. This means that they'll display
+# the actual number of genes considered up and down regulated in the same diagram.
+up_regulation_labels = dge_analysis.get_labels_for_venn3_diagram(
+        venn_set_dictionary=venn_set_up_dictionary,
+        mutants=MUTANT_SAMPLES,
+        )
+down_regulation_labels = dge_analysis.get_labels_for_venn3_diagram(
+        venn_set_dictionary=venn_set_down_dictionary,
+        mutants=MUTANT_SAMPLES,
+        )
 
+# Generate the same two diagrams but with the labels
+dge_analysis.generate_venn3_diagram_with_regulation_labels(
+        set1=(venn_set_dictionary[MUTANT_SAMPLES[0]], MUTANT_SAMPLES[0]),
+        set2=(venn_set_dictionary[MUTANT_SAMPLES[1]], MUTANT_SAMPLES[1]),
+        set3=(venn_set_dictionary[MUTANT_SAMPLES[2]], MUTANT_SAMPLES[2]),
+        up_regulation_labels=up_regulation_labels,
+        down_regulation_labels=down_regulation_labels,
+        plot_formats=PLOT_FORMATS,
+        title=f"Diffentientialy expressed genes\n(Fold change > {FOLD_CHANGE_THRESHOLD})",
+        file_name="venn_total_regulation_with_labels"
+                                  )
+
+# Generate two more diagrams but only for the up-regulated genes
+dge_analysis.generate_venn3_diagram(
+        set1=(venn_set_up_dictionary[MUTANT_SAMPLES[0]], MUTANT_SAMPLES[0]),
+        set2=(venn_set_up_dictionary[MUTANT_SAMPLES[1]], MUTANT_SAMPLES[1]),
+        set3=(venn_set_up_dictionary[MUTANT_SAMPLES[2]], MUTANT_SAMPLES[2]),
+        plot_formats=PLOT_FORMATS,
+        title=f"Up-regulated genes\n(Fold change > {FOLD_CHANGE_THRESHOLD})",
+        file_name="venn_up_regulation"
+                                  )
+
+# Generate two more diagrams but only for the down-regulated genes
+dge_analysis.generate_venn3_diagram(
+        set1=(venn_set_down_dictionary[MUTANT_SAMPLES[0]], MUTANT_SAMPLES[0]),
+        set2=(venn_set_down_dictionary[MUTANT_SAMPLES[1]], MUTANT_SAMPLES[1]),
+        set3=(venn_set_down_dictionary[MUTANT_SAMPLES[2]], MUTANT_SAMPLES[2]),
+        plot_formats=PLOT_FORMATS,
+        title=f"Down-regulated genes\n(Fold change > {FOLD_CHANGE_THRESHOLD})",
+        file_name="venn_down_regulation"
+                                  )
 

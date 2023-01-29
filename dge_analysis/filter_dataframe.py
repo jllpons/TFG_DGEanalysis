@@ -117,7 +117,7 @@ def filter_FC_PVALUE_PADJ(
     # Assignin the filtered dataframe to a variable.
     filtered_dataframe = dataframe[ # The original dataframe.
             (dataframe[column_names_to_check["FoldChange"]]
-                >=
+                >
             foldchange_threshold)
             & # "&" equals "and" operator in pandas.
             (dataframe[column_names_to_check["pvalue"]] < p_value_threshold)
@@ -127,3 +127,35 @@ def filter_FC_PVALUE_PADJ(
     # NOTE: This is not optimal, i should check if elements of the list have
     #       a correct order.
     return filtered_dataframe
+
+def get_labels_for_venn3_diagram(
+        venn_set_dictionary,
+        mutants,
+        ):
+    """
+    Computes labels for a venn diagram between 3 sets. Returns a dictionary
+    where the values'll be the numeric values for each intersection of the venn
+    diagram. Keys are binary numbers that represent each intersection:
+        - First bit equals to the first set.
+        - Second bit equals to the second set.
+        - Third bit equals to the third set.
+    """
+
+    labels_dict = {}
+    labels_dict["100"] = len([i for i in venn_set_dictionary[mutants[0]] if (
+        i not in venn_set_dictionary[mutants[1]] and i not in venn_set_dictionary[mutants[2]])])
+    labels_dict["110"] = len([i for i in venn_set_dictionary[mutants[0]] if (
+        i in venn_set_dictionary[mutants[1]] and i not in venn_set_dictionary[mutants[2]])])
+    labels_dict["101"] = len([i for i in venn_set_dictionary[mutants[0]] if (
+        i not in venn_set_dictionary[mutants[1]] and i in venn_set_dictionary[mutants[2]])])
+    labels_dict["111"] = len([i for i in venn_set_dictionary[mutants[0]] if (
+        i in venn_set_dictionary[mutants[1]] and i in venn_set_dictionary[mutants[2]])])
+    labels_dict["010"] = len([i for i in venn_set_dictionary[mutants[1]] if (
+        i not in venn_set_dictionary[mutants[0]] and i not in venn_set_dictionary[mutants[2]])])
+    labels_dict["011"] = len([i for i in venn_set_dictionary[mutants[1]] if (
+        i not in venn_set_dictionary[mutants[0]] and i in venn_set_dictionary[mutants[2]])])
+    labels_dict["001"] = len([i for i in venn_set_dictionary[mutants[2]] if (
+        i not in venn_set_dictionary[mutants[0]] and i not in venn_set_dictionary[mutants[1]])])
+
+    return labels_dict
+

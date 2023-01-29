@@ -134,6 +134,39 @@ def add_regulation_columns(dataframe):
             accumulator += 1
 
 
+def get_gene_IDs_list_from_GO_df(
+        df,
+        row_index,
+        ):
+    """
+    The GO dataframe has 3 columns related to GeneIDs:
+        - geneID
+        - Up_gene_id
+        - Down_gene_id
+
+    This function checks these 3, obtains the gene IDs and returns them in a
+    list of unique values.
+    """
+
+    gene_IDs = []
+
+    gene_IDs.extend(df["geneID"][row_index].split("/"))
+    # The following is done because sometimes those cells are empty,
+    # and that would rise an error.
+    try:
+        gene_IDs.extend(df["Up_Gene_id"][row_index].split("/"))
+    except:
+        pass
+    try:
+        gene_IDs.extend(df["Down_Gene_id"][row_index].split("/"))
+    except:
+        pass
+
+    gene_IDs_uniq_values = list(set(gene_IDs))
+
+    return gene_IDs_uniq_values # list(set(gene_IDs))
+
+
 def create_go_dict(df):
     """
     Takes a GO related dataframe and returns a dictionary that maps each gene ID
@@ -151,7 +184,8 @@ def create_go_dict(df):
         go_ID = df["GOID"][i]
         go_descrition = df["Description"][i]
 
-        gene_IDs = df["geneID"][i].split("/")
+        gene_IDs = get_gene_IDs_list_from_GO_df(df=df, row_index=i)
+
         for gene in gene_IDs:
             # Some genes have more than one GO annotation.
             if gene in go_dictionary:

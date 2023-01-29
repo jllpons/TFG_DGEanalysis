@@ -8,5 +8,9 @@ from dge_analysis.add_columns import add_go_columns
 from dge_analysis.filter_dataframe import generate_sub_dataframes
 from dge_analysis.filter_dataframe import column_names_to_check
 from dge_analysis.filter_dataframe import filter_FC_PVALUE_PADJ
+from dge_analysis.filter_dataframe import get_labels_for_venn3_diagram
 from dge_analysis.generate_plots import generate_volcano_plot
+from dge_analysis.generate_plots import generate_cooler_volcano_plot
+from dge_analysis.generate_venn_diagrams import generate_venn3_diagram
+from dge_analysis.generate_venn_diagrams import generate_venn3_diagram_with_regulation_labels
 
