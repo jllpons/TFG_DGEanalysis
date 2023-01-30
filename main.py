@@ -216,7 +216,7 @@ dge_analysis.generate_venn3_diagram(
         set2=(venn_set_dictionary[MUTANT_SAMPLES[1]], MUTANT_SAMPLES[1]),
         set3=(venn_set_dictionary[MUTANT_SAMPLES[2]], MUTANT_SAMPLES[2]),
         plot_formats=PLOT_FORMATS,
-        title="Diffentientialy expressed genes.",
+        title="Differentially expressed genes.",
         file_name="venn_total_regulation"
                                   )
 
@@ -240,7 +240,7 @@ dge_analysis.generate_venn3_diagram_with_regulation_labels(
         up_regulation_labels=up_regulation_labels,
         down_regulation_labels=down_regulation_labels,
         plot_formats=PLOT_FORMATS,
-        title="Diffentientialy expressed genes.",
+        title="Differentially expressed genes.",
         file_name="venn_total_regulation_with_labels"
                                   )
 
