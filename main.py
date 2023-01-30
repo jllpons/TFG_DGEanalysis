@@ -207,7 +207,7 @@ for mutant in MUTANT_SAMPLES:
 #             mutant_name=mutant,
 #             plot_formats=PLOT_FORMATS,
 #             )
-#-------# Loop ends here #-----------------------------------------------------#
+#-------> Loop ends here
 
 # Generate 2 venn's diagrams representing all of the differentially expressed
 # genes. One will be defalut, the other will be unweight.
@@ -216,7 +216,7 @@ dge_analysis.generate_venn3_diagram(
         set2=(venn_set_dictionary[MUTANT_SAMPLES[1]], MUTANT_SAMPLES[1]),
         set3=(venn_set_dictionary[MUTANT_SAMPLES[2]], MUTANT_SAMPLES[2]),
         plot_formats=PLOT_FORMATS,
-        title=f"Diffentientialy expressed genes\n(Fold change > {FOLD_CHANGE_THRESHOLD})",
+        title="Diffentientialy expressed genes.",
         file_name="venn_total_regulation"
                                   )
 
@@ -240,7 +240,7 @@ dge_analysis.generate_venn3_diagram_with_regulation_labels(
         up_regulation_labels=up_regulation_labels,
         down_regulation_labels=down_regulation_labels,
         plot_formats=PLOT_FORMATS,
-        title=f"Diffentientialy expressed genes\n(Fold change > {FOLD_CHANGE_THRESHOLD})",
+        title="Diffentientialy expressed genes.",
         file_name="venn_total_regulation_with_labels"
                                   )
 
@@ -250,7 +250,7 @@ dge_analysis.generate_venn3_diagram(
         set2=(venn_set_up_dictionary[MUTANT_SAMPLES[1]], MUTANT_SAMPLES[1]),
         set3=(venn_set_up_dictionary[MUTANT_SAMPLES[2]], MUTANT_SAMPLES[2]),
         plot_formats=PLOT_FORMATS,
-        title=f"Up-regulated genes\n(Fold change > {FOLD_CHANGE_THRESHOLD})",
+        title="Up-regulated genes.",
         file_name="venn_up_regulation"
                                   )
 
@@ -260,7 +260,7 @@ dge_analysis.generate_venn3_diagram(
         set2=(venn_set_down_dictionary[MUTANT_SAMPLES[1]], MUTANT_SAMPLES[1]),
         set3=(venn_set_down_dictionary[MUTANT_SAMPLES[2]], MUTANT_SAMPLES[2]),
         plot_formats=PLOT_FORMATS,
-        title=f"Down-regulated genes\n(Fold change > {FOLD_CHANGE_THRESHOLD})",
+        title="Down-regulated genes.",
         file_name="venn_down_regulation"
                                   )
 
