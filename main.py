@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-import dge_analysis
-import pandas as pd
 import json
+import pandas as pd
+import dge_analysis
 
 #-------# Script Configuration #-----------------------------------------------#
 
@@ -34,6 +34,8 @@ PLOT_FORMATS = config_dict["plot_formats"]
 # Tells pandas explicitly what type of data each column contains.
 mytypes = config_dict["datatypes_dictionary"]
 
+df_to_merge_mutant = config_dict["df_to_merge"]["mutant_name"]
+df_to_merge_file_name = config_dict["df_to_merge"]["file_name"]
 
 #-------# Main Function #------------------------------------------------------#
 
@@ -81,23 +83,33 @@ sub_dataframes = dge_analysis.generate_sub_dataframes(
         mutants_list=MUTANT_SAMPLES
         )
 
+# Merging another df
+df_to_merge = pd.read_excel(
+        df_to_merge_file_name,
+        engine="xlrd",
+        na_values=['--']
+        )
+dge_analysis.add_fold_change_columns(df_to_merge)
+dge_analysis.add_regulation_columns(df_to_merge)
+sub_dataframes[df_to_merge_mutant] = df_to_merge
+
 venn_set_dictionary = {}
 venn_set_up_dictionary = {}
 venn_set_down_dictionary = {}
 
+dfs_directory = dge_analysis.mk_new_dir("dataframes")
+volcano_directory = dge_analysis.mk_new_dir("volcano_plots")
+
 for mutant in MUTANT_SAMPLES:
-    # Create a directory with the name of the mutant
-    mutant_directory = dge_analysis.mk_new_dir(
-            new_dir_name=f"{mutant}"
+    # Save to a file.
+    sub_dataframes[mutant].to_csv(
+            f"{dfs_directory}/{mutant}.csv",
+            index=False
             )
 
-    # Template name for the newly crated files.
-    mutant_file_name = f"{mutant_directory}/{mutant}"
-
-    # Save a ".csv" file of the dataframe.
-    sub_dataframes[mutant].to_csv(
-            f"{mutant_file_name}.csv",
-            index=False
+    sub_dataframes[mutant].to_excel(
+            f"{dfs_directory}/{mutant}.xlsx",
+            index=False,
             )
 
     # Get the name of the columns that'll use for filtering the sub-dataframes.
@@ -134,14 +146,18 @@ for mutant in MUTANT_SAMPLES:
 
     # Save a ".csv" file for the filtered sub-dataframe
     sub_dataframe_filtered.to_csv(
-            f"{mutant_file_name}_filtered.csv",
+            f"{dfs_directory}/{mutant}_filtered.csv",
             index=False
+            )
+    sub_dataframe_filtered.to_excel(
+            f"{dfs_directory}/{mutant}_filtered.xlsx",
+            index=False,
             )
 
     # Generate a volcano and a count plots
     dge_analysis.generate_volcano_plot(
             dataframe=sub_dataframes[mutant],
-            file_path=mutant_file_name,
+            file_path=f"{volcano_directory}/{mutant}",
             x_axis_values=column_names_to_check["log2FoldChange"],
             y_axis_values=column_names_to_check["padj"],
             foldchange_threshold=FOLD_CHANGE_THRESHOLD,
@@ -150,25 +166,26 @@ for mutant in MUTANT_SAMPLES:
             plot_formats=PLOT_FORMATS,
             )
 
-    # Don't use the recover function if it has been already used.
-    try:
-        go_df_recovered = pd.read_excel(
-                # The name of the file to open
-                f"{mutant}vsWT_ALL_GOenrich_RECOVERED.xls",
-                # The engine to use with ".xls" files according to the documentation.
-                engine="xlrd",
-                )
-    except:
-        go_df_to_recover = dge_analysis.recover_corrupted_file(
-                f"{mutant}vsWT_ALL_GOenrich.xls"
-                )
-        go_df_recovered = pd.read_excel(
-                # The name of the file to open
-                go_df_to_recover,
-                # The engine to use with ".xls" files according to the documentation.
-                engine="xlrd",
-                )
-# WIP:
+# WIP: may be delated in the future:
+# 
+#     # Don't use the recover function if it has been already used.
+#     try:
+#         go_df_recovered = pd.read_excel(
+#                 # The name of the file to open
+#                 f"{mutant}vsWT_ALL_GOenrich_RECOVERED.xls",
+#                 # The engine to use with ".xls" files according to the documentation.
+#                 engine="xlrd",
+#                 )
+#     except:
+#         go_df_to_recover = dge_analysis.recover_corrupted_file(
+#                 f"{mutant}vsWT_ALL_GOenrich.xls"
+#                 )
+#         go_df_recovered = pd.read_excel(
+#                 # The name of the file to open
+#                 go_df_to_recover,
+#                 # The engine to use with ".xls" files according to the documentation.
+#                 engine="xlrd",
+#                 )
 #     # Add Gene Ontology annotations for each gene.
 #     # Multiple annotations on the same gene will be stacked
 #     # and separeded with "/".
@@ -207,7 +224,11 @@ for mutant in MUTANT_SAMPLES:
 #             mutant_name=mutant,
 #             plot_formats=PLOT_FORMATS,
 #             )
-#-------> Loop ends here
+#---> Loop ends here
+
+venn_directory = dge_analysis.mk_new_dir(
+        new_dir_name="venn_diagrams"
+        )
 
 # Generate 2 venn's diagrams representing all of the differentially expressed
 # genes. One will be defalut, the other will be unweight.
@@ -217,8 +238,8 @@ dge_analysis.generate_venn3_diagram(
         set3=(venn_set_dictionary[MUTANT_SAMPLES[2]], MUTANT_SAMPLES[2]),
         plot_formats=PLOT_FORMATS,
         title="Differentially expressed genes.",
-        file_name="venn_total_regulation"
-                                  )
+        file_name=f"{venn_directory}/venn_total_regulation",
+        )
 
 # Both up/down_regulation_labels are dictrionaries conaining the labels for the
 # next venn diagrams we're going to generate. This means that they'll display
@@ -241,8 +262,8 @@ dge_analysis.generate_venn3_diagram_with_regulation_labels(
         down_regulation_labels=down_regulation_labels,
         plot_formats=PLOT_FORMATS,
         title="Differentially expressed genes.",
-        file_name="venn_total_regulation_with_labels"
-                                  )
+        file_name=f"{venn_directory}/venn_total_regulation_w_labels",
+        )
 
 # Generate two more diagrams but only for the up-regulated genes
 dge_analysis.generate_venn3_diagram(
@@ -251,8 +272,8 @@ dge_analysis.generate_venn3_diagram(
         set3=(venn_set_up_dictionary[MUTANT_SAMPLES[2]], MUTANT_SAMPLES[2]),
         plot_formats=PLOT_FORMATS,
         title="Up-regulated genes.",
-        file_name="venn_up_regulation"
-                                  )
+        file_name=f"{venn_directory}/venn_up_regulation",
+        )
 
 # Generate two more diagrams but only for the down-regulated genes
 dge_analysis.generate_venn3_diagram(
@@ -261,6 +282,122 @@ dge_analysis.generate_venn3_diagram(
         set3=(venn_set_down_dictionary[MUTANT_SAMPLES[2]], MUTANT_SAMPLES[2]),
         plot_formats=PLOT_FORMATS,
         title="Down-regulated genes.",
-        file_name="venn_down_regulation"
-                                  )
+        file_name=f"{venn_directory}/venn_down_regulation",
+        )
+
+# Comparing sets for inverted regulations between mutants...
+
+# Mutant 1 up, others down.
+dge_analysis.generate_venn3_diagram(
+        set1=(
+            venn_set_up_dictionary[MUTANT_SAMPLES[0]],
+            (r"$\uparrow$" + MUTANT_SAMPLES[0]),
+            ),
+        set2=(
+            venn_set_down_dictionary[MUTANT_SAMPLES[1]],
+            (r"$\downarrow$" + MUTANT_SAMPLES[1]),
+            ),
+        set3=(
+            venn_set_down_dictionary[MUTANT_SAMPLES[2]],
+            (r"$\downarrow$" + MUTANT_SAMPLES[2]),
+            ),
+        plot_formats=PLOT_FORMATS,
+        title="Differentially expressed genes.",
+        file_name=f"{venn_directory}/venn_{MUTANT_SAMPLES[0]}_up_others_down",
+        )
+
+# Mutants 1 and 2 up, 3 down
+dge_analysis.generate_venn3_diagram(
+        set1=(
+            venn_set_up_dictionary[MUTANT_SAMPLES[0]],
+            (r"$\uparrow$" + MUTANT_SAMPLES[0]),
+            ),
+        set2=(
+            venn_set_up_dictionary[MUTANT_SAMPLES[1]],
+            (r"$\uparrow$" + MUTANT_SAMPLES[1]),
+            ),
+        set3=(
+            venn_set_down_dictionary[MUTANT_SAMPLES[2]],
+            (r"$\downarrow$" + MUTANT_SAMPLES[2]),
+            ),
+        plot_formats=PLOT_FORMATS,
+        title="Differentially expressed genes.",
+        file_name=f"{venn_directory}/venn_{MUTANT_SAMPLES[2]}_down_others_up",
+        )
+
+# Mutants 1 and 3 up, 2 down
+dge_analysis.generate_venn3_diagram(
+        set1=(
+            venn_set_up_dictionary[MUTANT_SAMPLES[0]],
+            (r"$\uparrow$" + MUTANT_SAMPLES[0]),
+            ),
+        set2=(
+            venn_set_down_dictionary[MUTANT_SAMPLES[1]],
+            (r"$\downarrow$" + MUTANT_SAMPLES[1]),
+            ),
+        set3=(
+            venn_set_up_dictionary[MUTANT_SAMPLES[2]],
+            (r"$\uparrow$" + MUTANT_SAMPLES[2]),
+            ),
+        plot_formats=PLOT_FORMATS,
+        title="Differentially expressed genes.",
+        file_name=f"{venn_directory}/venn_{MUTANT_SAMPLES[1]}_down_others_up",
+        )
+
+# Mutant 1 down, others up.
+dge_analysis.generate_venn3_diagram(
+        set1=(
+            venn_set_down_dictionary[MUTANT_SAMPLES[0]],
+            (r"$\downarrow$" + MUTANT_SAMPLES[0]),
+            ),
+        set2=(
+            venn_set_up_dictionary[MUTANT_SAMPLES[1]],
+            (r"$\uparrow$" + MUTANT_SAMPLES[1]),
+            ),
+        set3=(
+            venn_set_up_dictionary[MUTANT_SAMPLES[2]],
+            (r"$\uparrow$" + MUTANT_SAMPLES[2]),
+            ),
+        plot_formats=PLOT_FORMATS,
+        title="Differentially expressed genes.",
+        file_name=f"{venn_directory}/venn_{MUTANT_SAMPLES[0]}_down_others_up",
+        )
+
+# Mutants 1 and 2 down, 3 up
+dge_analysis.generate_venn3_diagram(
+        set1=(
+            venn_set_down_dictionary[MUTANT_SAMPLES[0]],
+            (r"$\downarrow$" + MUTANT_SAMPLES[0]),
+            ),
+        set2=(
+            venn_set_down_dictionary[MUTANT_SAMPLES[1]],
+            (r"$\downarrow$" + MUTANT_SAMPLES[1]),
+            ),
+        set3=(
+            venn_set_up_dictionary[MUTANT_SAMPLES[2]],
+            (r"$\uparrow$" + MUTANT_SAMPLES[2]),
+            ),
+        plot_formats=PLOT_FORMATS,
+        title="Differentially expressed genes.",
+        file_name=f"{venn_directory}/venn_{MUTANT_SAMPLES[2]}_up_others_down",
+        )
+
+# Mutants 1 and 3 down, 2 up
+dge_analysis.generate_venn3_diagram(
+        set1=(
+            venn_set_down_dictionary[MUTANT_SAMPLES[0]],
+            (r"$\downarrow$" + MUTANT_SAMPLES[0]),
+            ),
+        set2=(
+            venn_set_up_dictionary[MUTANT_SAMPLES[1]],
+            (r"$\uparrow$" + MUTANT_SAMPLES[1]),
+            ),
+        set3=(
+            venn_set_down_dictionary[MUTANT_SAMPLES[2]],
+            (r"$\downarrow$" + MUTANT_SAMPLES[2]),
+            ),
+        plot_formats=PLOT_FORMATS,
+        title="Differentially expressed genes.",
+        file_name=f"{venn_directory}/venn_{MUTANT_SAMPLES[1]}_up_others_down",
+        )
 
