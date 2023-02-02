@@ -117,15 +117,14 @@ def filter_FC_PVALUE_PADJ(
     # Assignin the filtered dataframe to a variable.
     filtered_dataframe = dataframe[ # The original dataframe.
             (dataframe[column_names_to_check["FoldChange"]]
-                >
+                >=
             foldchange_threshold)
             & # "&" equals "and" operator in pandas.
             (dataframe[column_names_to_check["pvalue"]] < p_value_threshold)
             &
             (dataframe[column_names_to_check["padj"]] < padj_threshold)
             ]
-    # NOTE: This is not optimal, i should check if elements of the list have
-    #       a correct order.
+
     return filtered_dataframe
 
 def get_labels_for_venn3_diagram(

@@ -38,7 +38,7 @@ def generate_regulation_countplot(
             +
             f" gene regulation stats for:\np-adj < {padj_threshold}"
             +
-            f"\nFold Change > {foldchange_threshold}"
+            f"\nFold Change >= {foldchange_threshold}"
             )
 
     plt.title(title)
@@ -94,11 +94,11 @@ def generate_volcano_plot(
 
         if b < log10_padj_threshold:
             regulation_column.append("NO")
-        elif a >= -log2FoldChange_threshold and a <= log2FoldChange_threshold:
+        elif a > -log2FoldChange_threshold and a < log2FoldChange_threshold:
             regulation_column.append("NO")
-        elif a < -log2FoldChange_threshold:
+        elif a <= -log2FoldChange_threshold:
             regulation_column.append("DOWN")
-        elif a > log2FoldChange_threshold:
+        elif a >= log2FoldChange_threshold:
             regulation_column.append("UP")
         else:
             regulation_column.append("NO")
@@ -171,7 +171,7 @@ def generate_volcano_plot(
             +
             str(round(log10_padj_threshold, 3))
             +
-            "\nFold Change > "
+            "\nFold Change >= "
             +
             str(foldchange_threshold)
             +
