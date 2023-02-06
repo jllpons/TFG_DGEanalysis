@@ -93,12 +93,15 @@ dge_analysis.add_fold_change_columns(df_to_merge)
 dge_analysis.add_regulation_columns(df_to_merge)
 sub_dataframes[df_to_merge_mutant] = df_to_merge
 
-venn_set_dictionary = {}
-venn_set_up_dictionary = {}
-venn_set_down_dictionary = {}
 
 dfs_directory = dge_analysis.mk_new_dir("dataframes")
 volcano_directory = dge_analysis.mk_new_dir("volcano_plots")
+
+# Saving three sets of gene_ids for each mutant in a dictionary:
+#   - DEG (Up or Down)
+#   - Up
+#   - Down
+mutant_regulation_sets_directory = {}
 
 for mutant in MUTANT_SAMPLES:
     # Save to a file.
@@ -128,21 +131,20 @@ for mutant in MUTANT_SAMPLES:
             column_names_to_check=column_names_to_check,
             )
 
-    # Saving a set containing all of the filtered gene names for the
-    # Venn diagram generation.
-    venn_set_dictionary[mutant] = set(sub_dataframe_filtered.gene_id)
-    # Same but only if the gene is considered to be up-regulated
-    venn_set_up_dictionary[mutant] = set(
-            sub_dataframe_filtered[
-                sub_dataframe_filtered[f"{mutant}vsWT_Regulation"] == "Up"
-                ]["gene_id"]
-            )
-    # Same but only if the gene is considered to be down-regulated
-    venn_set_down_dictionary[mutant] = set(
-            sub_dataframe_filtered[
-                sub_dataframe_filtered[f"{mutant}vsWT_Regulation"] == "Down"
-                ]["gene_id"]
-            )
+    # Saving the sets of gene_ids
+    mutant_regulation_sets_directory[mutant] = {
+            "DEG" : set(sub_dataframe_filtered.gene_id),
+            "Up" : set(
+                sub_dataframe_filtered[
+                    sub_dataframe_filtered[f"{mutant}vsWT_Regulation"] == "Up"
+                                       ]["gene_id"]
+                ),
+            "Down" : set(
+                sub_dataframe_filtered[
+                    sub_dataframe_filtered[f"{mutant}vsWT_Regulation"] == "Down"
+                    ]["gene_id"]
+                ),
+            }
 
     # Save a ".csv" file for the filtered sub-dataframe
     sub_dataframe_filtered.to_csv(
@@ -233,31 +235,33 @@ venn_directory = dge_analysis.mk_new_dir(
 # Generate 2 venn's diagrams representing all of the differentially expressed
 # genes. One will be defalut, the other will be unweight.
 dge_analysis.generate_venn3_diagram(
-        set1=(venn_set_dictionary[MUTANT_SAMPLES[0]], MUTANT_SAMPLES[0]),
-        set2=(venn_set_dictionary[MUTANT_SAMPLES[1]], MUTANT_SAMPLES[1]),
-        set3=(venn_set_dictionary[MUTANT_SAMPLES[2]], MUTANT_SAMPLES[2]),
+        set1=(mutant_regulation_sets_directory[MUTANT_SAMPLES[0]]["DEG"], MUTANT_SAMPLES[0]),
+        set2=(mutant_regulation_sets_directory[MUTANT_SAMPLES[1]]["DEG"], MUTANT_SAMPLES[1]),
+        set3=(mutant_regulation_sets_directory[MUTANT_SAMPLES[2]]["DEG"], MUTANT_SAMPLES[2]),
         plot_formats=PLOT_FORMATS,
         title="Differentially expressed genes.",
         file_name=f"{venn_directory}/venn_total_regulation",
         )
 
-# Both up/down_regulation_labels are dictrionaries conaining the labels for the
-# next venn diagrams we're going to generate. This means that they'll display
-# the actual number of genes considered up and down regulated in the same diagram.
+# Both up/down_regulation_labels are dictionaries conaining the labels for the
+# next venn diagrams we're going to generate. They'll display the actual number
+# of genes considered up and down regulated at the same time.
 up_regulation_labels = dge_analysis.get_labels_for_venn3_diagram(
-        venn_set_dictionary=venn_set_up_dictionary,
-        mutants=MUTANT_SAMPLES,
+        set1=mutant_regulation_sets_directory[MUTANT_SAMPLES[0]]["Up"],
+        set2=mutant_regulation_sets_directory[MUTANT_SAMPLES[1]]["Up"],
+        set3=mutant_regulation_sets_directory[MUTANT_SAMPLES[2]]["Up"],
         )
 down_regulation_labels = dge_analysis.get_labels_for_venn3_diagram(
-        venn_set_dictionary=venn_set_down_dictionary,
-        mutants=MUTANT_SAMPLES,
+        set1=mutant_regulation_sets_directory[MUTANT_SAMPLES[0]]["Down"],
+        set2=mutant_regulation_sets_directory[MUTANT_SAMPLES[1]]["Down"],
+        set3=mutant_regulation_sets_directory[MUTANT_SAMPLES[2]]["Down"],
         )
 
 # Generate the same two diagrams but with the labels
 dge_analysis.generate_venn3_diagram_with_regulation_labels(
-        set1=(venn_set_dictionary[MUTANT_SAMPLES[0]], MUTANT_SAMPLES[0]),
-        set2=(venn_set_dictionary[MUTANT_SAMPLES[1]], MUTANT_SAMPLES[1]),
-        set3=(venn_set_dictionary[MUTANT_SAMPLES[2]], MUTANT_SAMPLES[2]),
+        set1=(mutant_regulation_sets_directory[MUTANT_SAMPLES[0]]["DEG"], MUTANT_SAMPLES[0]),
+        set2=(mutant_regulation_sets_directory[MUTANT_SAMPLES[1]]["DEG"], MUTANT_SAMPLES[1]),
+        set3=(mutant_regulation_sets_directory[MUTANT_SAMPLES[2]]["DEG"], MUTANT_SAMPLES[2]),
         up_regulation_labels=up_regulation_labels,
         down_regulation_labels=down_regulation_labels,
         plot_formats=PLOT_FORMATS,
@@ -267,9 +271,9 @@ dge_analysis.generate_venn3_diagram_with_regulation_labels(
 
 # Generate two more diagrams but only for the up-regulated genes
 dge_analysis.generate_venn3_diagram(
-        set1=(venn_set_up_dictionary[MUTANT_SAMPLES[0]], MUTANT_SAMPLES[0]),
-        set2=(venn_set_up_dictionary[MUTANT_SAMPLES[1]], MUTANT_SAMPLES[1]),
-        set3=(venn_set_up_dictionary[MUTANT_SAMPLES[2]], MUTANT_SAMPLES[2]),
+        set1=(mutant_regulation_sets_directory[MUTANT_SAMPLES[0]]["Up"], MUTANT_SAMPLES[0]),
+        set2=(mutant_regulation_sets_directory[MUTANT_SAMPLES[1]]["Up"], MUTANT_SAMPLES[1]),
+        set3=(mutant_regulation_sets_directory[MUTANT_SAMPLES[2]]["Up"], MUTANT_SAMPLES[2]),
         plot_formats=PLOT_FORMATS,
         title="Up-regulated genes.",
         file_name=f"{venn_directory}/venn_up_regulation",
@@ -277,9 +281,9 @@ dge_analysis.generate_venn3_diagram(
 
 # Generate two more diagrams but only for the down-regulated genes
 dge_analysis.generate_venn3_diagram(
-        set1=(venn_set_down_dictionary[MUTANT_SAMPLES[0]], MUTANT_SAMPLES[0]),
-        set2=(venn_set_down_dictionary[MUTANT_SAMPLES[1]], MUTANT_SAMPLES[1]),
-        set3=(venn_set_down_dictionary[MUTANT_SAMPLES[2]], MUTANT_SAMPLES[2]),
+        set1=(mutant_regulation_sets_directory[MUTANT_SAMPLES[0]]["Down"], MUTANT_SAMPLES[0]),
+        set2=(mutant_regulation_sets_directory[MUTANT_SAMPLES[1]]["Down"], MUTANT_SAMPLES[1]),
+        set3=(mutant_regulation_sets_directory[MUTANT_SAMPLES[2]]["Down"], MUTANT_SAMPLES[2]),
         plot_formats=PLOT_FORMATS,
         title="Down-regulated genes.",
         file_name=f"{venn_directory}/venn_down_regulation",
@@ -290,15 +294,15 @@ dge_analysis.generate_venn3_diagram(
 # Mutant 1 up, others down.
 dge_analysis.generate_venn3_diagram(
         set1=(
-            venn_set_up_dictionary[MUTANT_SAMPLES[0]],
+            mutant_regulation_sets_directory[MUTANT_SAMPLES[0]]["Up"],
             (r"$\uparrow$" + MUTANT_SAMPLES[0]),
             ),
         set2=(
-            venn_set_down_dictionary[MUTANT_SAMPLES[1]],
+            mutant_regulation_sets_directory[MUTANT_SAMPLES[1]]["Down"],
             (r"$\downarrow$" + MUTANT_SAMPLES[1]),
             ),
         set3=(
-            venn_set_down_dictionary[MUTANT_SAMPLES[2]],
+            mutant_regulation_sets_directory[MUTANT_SAMPLES[2]]["Down"],
             (r"$\downarrow$" + MUTANT_SAMPLES[2]),
             ),
         plot_formats=PLOT_FORMATS,
@@ -309,15 +313,15 @@ dge_analysis.generate_venn3_diagram(
 # Mutants 1 and 2 up, 3 down
 dge_analysis.generate_venn3_diagram(
         set1=(
-            venn_set_up_dictionary[MUTANT_SAMPLES[0]],
+            mutant_regulation_sets_directory[MUTANT_SAMPLES[0]]["Up"],
             (r"$\uparrow$" + MUTANT_SAMPLES[0]),
             ),
         set2=(
-            venn_set_up_dictionary[MUTANT_SAMPLES[1]],
+            mutant_regulation_sets_directory[MUTANT_SAMPLES[1]]["Up"],
             (r"$\uparrow$" + MUTANT_SAMPLES[1]),
             ),
         set3=(
-            venn_set_down_dictionary[MUTANT_SAMPLES[2]],
+            mutant_regulation_sets_directory[MUTANT_SAMPLES[2]]["Down"],
             (r"$\downarrow$" + MUTANT_SAMPLES[2]),
             ),
         plot_formats=PLOT_FORMATS,
@@ -328,15 +332,15 @@ dge_analysis.generate_venn3_diagram(
 # Mutants 1 and 3 up, 2 down
 dge_analysis.generate_venn3_diagram(
         set1=(
-            venn_set_up_dictionary[MUTANT_SAMPLES[0]],
+            mutant_regulation_sets_directory[MUTANT_SAMPLES[0]]["Up"],
             (r"$\uparrow$" + MUTANT_SAMPLES[0]),
             ),
         set2=(
-            venn_set_down_dictionary[MUTANT_SAMPLES[1]],
+            mutant_regulation_sets_directory[MUTANT_SAMPLES[1]]["Down"],
             (r"$\downarrow$" + MUTANT_SAMPLES[1]),
             ),
         set3=(
-            venn_set_up_dictionary[MUTANT_SAMPLES[2]],
+            mutant_regulation_sets_directory[MUTANT_SAMPLES[2]]["Up"],
             (r"$\uparrow$" + MUTANT_SAMPLES[2]),
             ),
         plot_formats=PLOT_FORMATS,
@@ -347,15 +351,15 @@ dge_analysis.generate_venn3_diagram(
 # Mutant 1 down, others up.
 dge_analysis.generate_venn3_diagram(
         set1=(
-            venn_set_down_dictionary[MUTANT_SAMPLES[0]],
+            mutant_regulation_sets_directory[MUTANT_SAMPLES[0]]["Down"],
             (r"$\downarrow$" + MUTANT_SAMPLES[0]),
             ),
         set2=(
-            venn_set_up_dictionary[MUTANT_SAMPLES[1]],
+            mutant_regulation_sets_directory[MUTANT_SAMPLES[1]]["Up"],
             (r"$\uparrow$" + MUTANT_SAMPLES[1]),
             ),
         set3=(
-            venn_set_up_dictionary[MUTANT_SAMPLES[2]],
+            mutant_regulation_sets_directory[MUTANT_SAMPLES[2]]["Up"],
             (r"$\uparrow$" + MUTANT_SAMPLES[2]),
             ),
         plot_formats=PLOT_FORMATS,
@@ -366,15 +370,15 @@ dge_analysis.generate_venn3_diagram(
 # Mutants 1 and 2 down, 3 up
 dge_analysis.generate_venn3_diagram(
         set1=(
-            venn_set_down_dictionary[MUTANT_SAMPLES[0]],
+            mutant_regulation_sets_directory[MUTANT_SAMPLES[0]]["Down"],
             (r"$\downarrow$" + MUTANT_SAMPLES[0]),
             ),
         set2=(
-            venn_set_down_dictionary[MUTANT_SAMPLES[1]],
+            mutant_regulation_sets_directory[MUTANT_SAMPLES[1]]["Down"],
             (r"$\downarrow$" + MUTANT_SAMPLES[1]),
             ),
         set3=(
-            venn_set_up_dictionary[MUTANT_SAMPLES[2]],
+            mutant_regulation_sets_directory[MUTANT_SAMPLES[2]]["Up"],
             (r"$\uparrow$" + MUTANT_SAMPLES[2]),
             ),
         plot_formats=PLOT_FORMATS,
@@ -385,19 +389,20 @@ dge_analysis.generate_venn3_diagram(
 # Mutants 1 and 3 down, 2 up
 dge_analysis.generate_venn3_diagram(
         set1=(
-            venn_set_down_dictionary[MUTANT_SAMPLES[0]],
+            mutant_regulation_sets_directory[MUTANT_SAMPLES[0]]["Down"],
             (r"$\downarrow$" + MUTANT_SAMPLES[0]),
             ),
         set2=(
-            venn_set_up_dictionary[MUTANT_SAMPLES[1]],
+            mutant_regulation_sets_directory[MUTANT_SAMPLES[1]]["Up"],
             (r"$\uparrow$" + MUTANT_SAMPLES[1]),
             ),
         set3=(
-            venn_set_down_dictionary[MUTANT_SAMPLES[2]],
+            mutant_regulation_sets_directory[MUTANT_SAMPLES[2]]["Down"],
             (r"$\downarrow$" + MUTANT_SAMPLES[2]),
             ),
         plot_formats=PLOT_FORMATS,
         title="Differentially expressed genes.",
         file_name=f"{venn_directory}/venn_{MUTANT_SAMPLES[1]}_up_others_down",
         )
+
 

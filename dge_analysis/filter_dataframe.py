@@ -128,8 +128,9 @@ def filter_FC_PVALUE_PADJ(
     return filtered_dataframe
 
 def get_labels_for_venn3_diagram(
-        venn_set_dictionary,
-        mutants,
+        set1,
+        set2,
+        set3,
         ):
     """
     Computes labels for a venn diagram between 3 sets. Returns a dictionary
@@ -141,20 +142,13 @@ def get_labels_for_venn3_diagram(
     """
 
     labels_dict = {}
-    labels_dict["100"] = len([i for i in venn_set_dictionary[mutants[0]] if (
-        i not in venn_set_dictionary[mutants[1]] and i not in venn_set_dictionary[mutants[2]])])
-    labels_dict["110"] = len([i for i in venn_set_dictionary[mutants[0]] if (
-        i in venn_set_dictionary[mutants[1]] and i not in venn_set_dictionary[mutants[2]])])
-    labels_dict["101"] = len([i for i in venn_set_dictionary[mutants[0]] if (
-        i not in venn_set_dictionary[mutants[1]] and i in venn_set_dictionary[mutants[2]])])
-    labels_dict["111"] = len([i for i in venn_set_dictionary[mutants[0]] if (
-        i in venn_set_dictionary[mutants[1]] and i in venn_set_dictionary[mutants[2]])])
-    labels_dict["010"] = len([i for i in venn_set_dictionary[mutants[1]] if (
-        i not in venn_set_dictionary[mutants[0]] and i not in venn_set_dictionary[mutants[2]])])
-    labels_dict["011"] = len([i for i in venn_set_dictionary[mutants[1]] if (
-        i not in venn_set_dictionary[mutants[0]] and i in venn_set_dictionary[mutants[2]])])
-    labels_dict["001"] = len([i for i in venn_set_dictionary[mutants[2]] if (
-        i not in venn_set_dictionary[mutants[0]] and i not in venn_set_dictionary[mutants[1]])])
+    labels_dict["100"] = len([i for i in set1 if i not in set2 and i not in set3])
+    labels_dict["110"] = len([i for i in set1 if i in set2 and i not in set3])
+    labels_dict["101"] = len([i for i in set1 if i not in set2 and i in set3])
+    labels_dict["111"] = len([i for i in set1 if i in set2 and i in set3])
+    labels_dict["010"] = len([i for i in set2 if i not in set1 and i not in set3])
+    labels_dict["011"] = len([i for i in set2 if i not in set1 and i in set3])
+    labels_dict["001"] = len([i for i in set3 if i not in set1 and i not in set2])
 
     return labels_dict
 
