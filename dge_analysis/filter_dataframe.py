@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 
-import pandas as pd
-
 """
 Dataframe handeling, filtering and sub-dataframe generation.
 """
+
+
+import pandas as pd
+from dge_analysis.generate_venn_diagrams import generate_venn3_diagram
+from xlrd.formatting import re
 
 
 #-------# Function Definitions #-----------------------------------------------#
@@ -151,4 +154,72 @@ def get_labels_for_venn3_diagram(
     labels_dict["001"] = len([i for i in set3 if i not in set1 and i not in set2])
 
     return labels_dict
+
+def get_inverted_regulations_and_mk_venns_and_dataframes(
+        sets_dictionary,
+        mutants,
+        plot_formats,
+        venn_directory_path,
+        ):
+    """
+    Work in progress
+    """
+
+    for i in range(len(mutants)):
+        mutant1 = mutants[i]
+        for regulation in sets_dictionary[mutants[i]]:
+            if regulation != "DEG":
+                mutant1_regulation = sets_dictionary[mutant1][regulation]
+                mutants_2_and_3_list = [i for i in mutants if i is not mutant1]
+                mutant2 = mutants_2_and_3_list[0]
+                mutant3 = mutants_2_and_3_list[1]
+
+                if regulation == "Up":
+                    mutant1_label = (r"$\uparrow$" + str(mutant1))
+                    mutant2_regulation = sets_dictionary[mutant2]["Down"]
+                    mutant2_label = (r"$\downarrow$" + str(mutant2))
+                    mutant3_regulation = sets_dictionary[mutant3]["Down"]
+                    mutant3_label = (r"$\downarrow$" + str(mutant3))
+                    venn_filename = f"{mutant1}_up_others_down"
+
+                elif regulation == "Down":
+                    mutant1_label = (r"$\downarrow$" + str(mutant1))
+                    mutant2_regulation = sets_dictionary[mutant2]["Up"]
+                    mutant2_label = (r"$\uparrow$" + str(mutant2))
+                    mutant3_regulation = sets_dictionary[mutant3]["Up"]
+                    mutant3_label = (r"$\uparrow$" + str(mutant3))
+                    venn_filename = f"{mutant1}_down_others_up"
+
+                reguations = [mutant1_regulation, mutant2_regulation, mutant3_regulation]
+                labels = [mutant1_label, mutant2_label, mutant3_label]
+
+                # I'm doing this because i want the mutants to have the same
+                # spot and color in the different venn diagrams
+                if i == 0:
+                    generate_venn3_diagram(
+                            set1=(reguations[0], labels[0]),
+                            set2=(reguations[1], labels[1]),
+                            set3=(reguations[2], labels[2]),
+                            plot_formats=plot_formats,
+                            title="Differentially expressed genes.",
+                            file_name=f"{venn_directory_path}/venn_{venn_filename}",
+                            )
+                elif i == 1:
+                    generate_venn3_diagram(
+                            set1=(reguations[1], labels[1]),
+                            set2=(reguations[0], labels[0]),
+                            set3=(reguations[2], labels[2]),
+                            plot_formats=plot_formats,
+                            title="Differentially expressed genes.",
+                            file_name=f"{venn_directory_path}/venn_{venn_filename}",
+                            )
+                elif i == 2:
+                    generate_venn3_diagram(
+                            set1=(reguations[1], labels[1]),
+                            set2=(reguations[2], labels[2]),
+                            set3=(reguations[0], labels[0]),
+                            plot_formats=plot_formats,
+                            title="Differentially expressed genes.",
+                            file_name=f"{venn_directory_path}/venn_{venn_filename}",
+                            )
 

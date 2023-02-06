@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import json
+import os
 import pandas as pd
 import dge_analysis
 
@@ -289,120 +290,14 @@ dge_analysis.generate_venn3_diagram(
         file_name=f"{venn_directory}/venn_down_regulation",
         )
 
-# Comparing sets for inverted regulations between mutants...
-
-# Mutant 1 up, others down.
-dge_analysis.generate_venn3_diagram(
-        set1=(
-            mutant_regulation_sets_directory[MUTANT_SAMPLES[0]]["Up"],
-            (r"$\uparrow$" + MUTANT_SAMPLES[0]),
-            ),
-        set2=(
-            mutant_regulation_sets_directory[MUTANT_SAMPLES[1]]["Down"],
-            (r"$\downarrow$" + MUTANT_SAMPLES[1]),
-            ),
-        set3=(
-            mutant_regulation_sets_directory[MUTANT_SAMPLES[2]]["Down"],
-            (r"$\downarrow$" + MUTANT_SAMPLES[2]),
-            ),
+# Comparing sets for the 6 possible inverted regulations combinations.
+# Makes a venn diagramm and generates 7 dataframes for the genes of each
+# intersection.
+os.mkdir(f"{venn_directory}/inverted_regulations")
+dge_analysis.get_inverted_regulations_and_mk_venns_and_dataframes(
+        sets_dictionary=mutant_regulation_sets_directory,
+        mutants=MUTANT_SAMPLES,
         plot_formats=PLOT_FORMATS,
-        title="Differentially expressed genes.",
-        file_name=f"{venn_directory}/venn_{MUTANT_SAMPLES[0]}_up_others_down",
+        venn_directory_path=f"{venn_directory}/inverted_regulations",
         )
-
-# Mutants 1 and 2 up, 3 down
-dge_analysis.generate_venn3_diagram(
-        set1=(
-            mutant_regulation_sets_directory[MUTANT_SAMPLES[0]]["Up"],
-            (r"$\uparrow$" + MUTANT_SAMPLES[0]),
-            ),
-        set2=(
-            mutant_regulation_sets_directory[MUTANT_SAMPLES[1]]["Up"],
-            (r"$\uparrow$" + MUTANT_SAMPLES[1]),
-            ),
-        set3=(
-            mutant_regulation_sets_directory[MUTANT_SAMPLES[2]]["Down"],
-            (r"$\downarrow$" + MUTANT_SAMPLES[2]),
-            ),
-        plot_formats=PLOT_FORMATS,
-        title="Differentially expressed genes.",
-        file_name=f"{venn_directory}/venn_{MUTANT_SAMPLES[2]}_down_others_up",
-        )
-
-# Mutants 1 and 3 up, 2 down
-dge_analysis.generate_venn3_diagram(
-        set1=(
-            mutant_regulation_sets_directory[MUTANT_SAMPLES[0]]["Up"],
-            (r"$\uparrow$" + MUTANT_SAMPLES[0]),
-            ),
-        set2=(
-            mutant_regulation_sets_directory[MUTANT_SAMPLES[1]]["Down"],
-            (r"$\downarrow$" + MUTANT_SAMPLES[1]),
-            ),
-        set3=(
-            mutant_regulation_sets_directory[MUTANT_SAMPLES[2]]["Up"],
-            (r"$\uparrow$" + MUTANT_SAMPLES[2]),
-            ),
-        plot_formats=PLOT_FORMATS,
-        title="Differentially expressed genes.",
-        file_name=f"{venn_directory}/venn_{MUTANT_SAMPLES[1]}_down_others_up",
-        )
-
-# Mutant 1 down, others up.
-dge_analysis.generate_venn3_diagram(
-        set1=(
-            mutant_regulation_sets_directory[MUTANT_SAMPLES[0]]["Down"],
-            (r"$\downarrow$" + MUTANT_SAMPLES[0]),
-            ),
-        set2=(
-            mutant_regulation_sets_directory[MUTANT_SAMPLES[1]]["Up"],
-            (r"$\uparrow$" + MUTANT_SAMPLES[1]),
-            ),
-        set3=(
-            mutant_regulation_sets_directory[MUTANT_SAMPLES[2]]["Up"],
-            (r"$\uparrow$" + MUTANT_SAMPLES[2]),
-            ),
-        plot_formats=PLOT_FORMATS,
-        title="Differentially expressed genes.",
-        file_name=f"{venn_directory}/venn_{MUTANT_SAMPLES[0]}_down_others_up",
-        )
-
-# Mutants 1 and 2 down, 3 up
-dge_analysis.generate_venn3_diagram(
-        set1=(
-            mutant_regulation_sets_directory[MUTANT_SAMPLES[0]]["Down"],
-            (r"$\downarrow$" + MUTANT_SAMPLES[0]),
-            ),
-        set2=(
-            mutant_regulation_sets_directory[MUTANT_SAMPLES[1]]["Down"],
-            (r"$\downarrow$" + MUTANT_SAMPLES[1]),
-            ),
-        set3=(
-            mutant_regulation_sets_directory[MUTANT_SAMPLES[2]]["Up"],
-            (r"$\uparrow$" + MUTANT_SAMPLES[2]),
-            ),
-        plot_formats=PLOT_FORMATS,
-        title="Differentially expressed genes.",
-        file_name=f"{venn_directory}/venn_{MUTANT_SAMPLES[2]}_up_others_down",
-        )
-
-# Mutants 1 and 3 down, 2 up
-dge_analysis.generate_venn3_diagram(
-        set1=(
-            mutant_regulation_sets_directory[MUTANT_SAMPLES[0]]["Down"],
-            (r"$\downarrow$" + MUTANT_SAMPLES[0]),
-            ),
-        set2=(
-            mutant_regulation_sets_directory[MUTANT_SAMPLES[1]]["Up"],
-            (r"$\uparrow$" + MUTANT_SAMPLES[1]),
-            ),
-        set3=(
-            mutant_regulation_sets_directory[MUTANT_SAMPLES[2]]["Down"],
-            (r"$\downarrow$" + MUTANT_SAMPLES[2]),
-            ),
-        plot_formats=PLOT_FORMATS,
-        title="Differentially expressed genes.",
-        file_name=f"{venn_directory}/venn_{MUTANT_SAMPLES[1]}_up_others_down",
-        )
-
 
