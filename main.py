@@ -84,6 +84,8 @@ sub_dataframes = dge_analysis.generate_sub_dataframes(
         mutants_list=MUTANT_SAMPLES
         )
 
+sub_dataframes_filtered = {}
+
 # Merging another df
 df_to_merge = pd.read_excel(
         df_to_merge_file_name,
@@ -105,14 +107,17 @@ volcano_directory = dge_analysis.mk_new_dir("volcano_plots")
 mutant_regulation_sets_directory = {}
 
 for mutant in MUTANT_SAMPLES:
+    mutant_dir = f"{dfs_directory}/{mutant}"
+    os.mkdir(mutant_dir)
+
     # Save to a file.
     sub_dataframes[mutant].to_csv(
-            f"{dfs_directory}/{mutant}.csv",
+            f"{mutant_dir}/{mutant}.csv",
             index=False
             )
 
     sub_dataframes[mutant].to_excel(
-            f"{dfs_directory}/{mutant}.xlsx",
+            f"{mutant_dir}/{mutant}.xlsx",
             index=False,
             )
 
@@ -124,7 +129,7 @@ for mutant in MUTANT_SAMPLES:
     # Filter the generate sub-dataframe according to the preestablished
     # thresholds for Fold Change, p-value and p-adjust values. Returns the
     # filtered dataframe.
-    sub_dataframe_filtered = dge_analysis.filter_FC_PVALUE_PADJ(
+    sub_dataframes_filtered[mutant] = dge_analysis.filter_FC_PVALUE_PADJ(
             dataframe=sub_dataframes[mutant],
             foldchange_threshold=FOLD_CHANGE_THRESHOLD,
             p_value_threshold=P_VALUE_THRESHOLD,
@@ -132,28 +137,44 @@ for mutant in MUTANT_SAMPLES:
             column_names_to_check=column_names_to_check,
             )
 
-    # Saving the sets of gene_ids
+    # subframes conaining only up or down-regulated genes.
+    sub_frame_up = sub_dataframes_filtered[mutant][
+            sub_dataframes_filtered[mutant][f"{mutant}vsWT_Regulation"] == "Up"
+            ]
+    sub_frame_down = sub_dataframes_filtered[mutant][
+            sub_dataframes_filtered[mutant][f"{mutant}vsWT_Regulation"] == "Down"
+            ]
+
+    # Adding the sets of gene_ids to the dictionary.
     mutant_regulation_sets_directory[mutant] = {
-            "DEG" : set(sub_dataframe_filtered.gene_id),
-            "Up" : set(
-                sub_dataframe_filtered[
-                    sub_dataframe_filtered[f"{mutant}vsWT_Regulation"] == "Up"
-                                       ]["gene_id"]
-                ),
-            "Down" : set(
-                sub_dataframe_filtered[
-                    sub_dataframe_filtered[f"{mutant}vsWT_Regulation"] == "Down"
-                    ]["gene_id"]
-                ),
+            "DEG" : set(sub_dataframes_filtered[mutant].gene_id),
+            "Up" : set(sub_frame_up.gene_id),
+            "Down" : set(sub_frame_down.gene_id),
             }
 
-    # Save a ".csv" file for the filtered sub-dataframe
-    sub_dataframe_filtered.to_csv(
-            f"{dfs_directory}/{mutant}_filtered.csv",
+    # Save filtered sub-dataframes to files.
+    sub_dataframes_filtered[mutant].to_csv(
+            f"{mutant_dir}/{mutant}_DEG.csv",
             index=False
             )
-    sub_dataframe_filtered.to_excel(
-            f"{dfs_directory}/{mutant}_filtered.xlsx",
+    sub_dataframes_filtered[mutant].to_excel(
+            f"{mutant_dir}/{mutant}_DEG.xlsx",
+            index=False,
+            )
+    sub_frame_up.to_csv(
+            f"{mutant_dir}/{mutant}_Up.csv",
+            index=False
+            )
+    sub_frame_up.to_excel(
+            f"{mutant_dir}/{mutant}_Up.xlsx",
+            index=False,
+            )
+    sub_frame_down.to_csv(
+            f"{mutant_dir}/{mutant}_Down.csv",
+            index=False
+            )
+    sub_frame_down.to_excel(
+            f"{mutant_dir}/{mutant}_Down.xlsx",
             index=False,
             )
 
@@ -169,64 +190,6 @@ for mutant in MUTANT_SAMPLES:
             plot_formats=PLOT_FORMATS,
             )
 
-# WIP: may be delated in the future:
-# 
-#     # Don't use the recover function if it has been already used.
-#     try:
-#         go_df_recovered = pd.read_excel(
-#                 # The name of the file to open
-#                 f"{mutant}vsWT_ALL_GOenrich_RECOVERED.xls",
-#                 # The engine to use with ".xls" files according to the documentation.
-#                 engine="xlrd",
-#                 )
-#     except:
-#         go_df_to_recover = dge_analysis.recover_corrupted_file(
-#                 f"{mutant}vsWT_ALL_GOenrich.xls"
-#                 )
-#         go_df_recovered = pd.read_excel(
-#                 # The name of the file to open
-#                 go_df_to_recover,
-#                 # The engine to use with ".xls" files according to the documentation.
-#                 engine="xlrd",
-#                 )
-#     # Add Gene Ontology annotations for each gene.
-#     # Multiple annotations on the same gene will be stacked
-#     # and separeded with "/".
-#     sub_dataframe_with_GO_info = dge_analysis.add_go_columns(
-#             df=sub_dataframes[mutant],
-#             go_df=go_df_recovered,
-#             )
-# 
-#     sub_dataframe_with_GO_info.to_csv(
-#             f"{mutant_file_name}_with_GO_info.csv",
-#             index=False
-#             )
-# 
-#     sub_dataframe_filtered_with_GO_info = dge_analysis.filter_FC_PVALUE_PADJ(
-#             dataframe=sub_dataframe_with_GO_info,
-#             foldchange_threshold=FOLD_CHANGE_THRESHOLD,
-#             p_value_threshold=P_VALUE_THRESHOLD,
-#             padj_threshold=PADJ_THRESHOLD,
-#             column_names_to_check=column_names_to_check,
-#             )
-# 
-#     sub_dataframe_filtered_with_GO_info.to_csv(
-#             f"{mutant_file_name}_with_GO_info_filtered.csv",
-#             index=False,
-#             )
-# 
-#     dge_analysis.generate_cooler_volcano_plot(
-#             dataframe=sub_dataframes[mutant],
-#             file_path=mutant_file_name,
-#             x_axis_values=column_names_to_check["log2FoldChange"],
-#             y_axis_values=column_names_to_check["padj"],
-#             foldchange_threshold=FOLD_CHANGE_THRESHOLD,
-#             padj_threshold=PADJ_THRESHOLD,
-#             picked_go_term1="GO:0040011",
-#             picked_go_term2="not now plis",
-#             mutant_name=mutant,
-#             plot_formats=PLOT_FORMATS,
-#             )
 #---> Loop ends here
 
 venn_directory = dge_analysis.mk_new_dir(
@@ -241,18 +204,32 @@ dge_analysis.generate_venn3_diagram(
         set3=(mutant_regulation_sets_directory[MUTANT_SAMPLES[2]]["DEG"], MUTANT_SAMPLES[2]),
         plot_formats=PLOT_FORMATS,
         title="Differentially expressed genes.",
-        file_name=f"{venn_directory}/venn_total_regulation",
+        file_name=f"{venn_directory}/venn_DEG",
         )
+
+dge_analysis.mk_df_for_each_intersection(
+        mutant1=MUTANT_SAMPLES[0],
+        set1=mutant_regulation_sets_directory[MUTANT_SAMPLES[0]]["DEG"],
+        mutant2=MUTANT_SAMPLES[1],
+        set2=mutant_regulation_sets_directory[MUTANT_SAMPLES[1]]["DEG"],
+        mutant3=MUTANT_SAMPLES[2],
+        set3=mutant_regulation_sets_directory[MUTANT_SAMPLES[2]]["DEG"],
+        filtered_dataframes=sub_dataframes_filtered,
+        dataframes_directory_path=dfs_directory,
+        name="DEG_intersections",
+        )
+
+
 
 # Both up/down_regulation_labels are dictionaries conaining the labels for the
 # next venn diagrams we're going to generate. They'll display the actual number
 # of genes considered up and down regulated at the same time.
-up_regulation_labels = dge_analysis.get_labels_for_venn3_diagram(
+up_regulation_labels = dge_analysis.get_gene_ids_list_for_intersections(
         set1=mutant_regulation_sets_directory[MUTANT_SAMPLES[0]]["Up"],
         set2=mutant_regulation_sets_directory[MUTANT_SAMPLES[1]]["Up"],
         set3=mutant_regulation_sets_directory[MUTANT_SAMPLES[2]]["Up"],
         )
-down_regulation_labels = dge_analysis.get_labels_for_venn3_diagram(
+down_regulation_labels = dge_analysis.get_gene_ids_list_for_intersections(
         set1=mutant_regulation_sets_directory[MUTANT_SAMPLES[0]]["Down"],
         set2=mutant_regulation_sets_directory[MUTANT_SAMPLES[1]]["Down"],
         set3=mutant_regulation_sets_directory[MUTANT_SAMPLES[2]]["Down"],
@@ -267,7 +244,7 @@ dge_analysis.generate_venn3_diagram_with_regulation_labels(
         down_regulation_labels=down_regulation_labels,
         plot_formats=PLOT_FORMATS,
         title="Differentially expressed genes.",
-        file_name=f"{venn_directory}/venn_total_regulation_w_labels",
+        file_name=f"{venn_directory}/venn_DEG_with_labels",
         )
 
 # Generate two more diagrams but only for the up-regulated genes
@@ -277,7 +254,18 @@ dge_analysis.generate_venn3_diagram(
         set3=(mutant_regulation_sets_directory[MUTANT_SAMPLES[2]]["Up"], MUTANT_SAMPLES[2]),
         plot_formats=PLOT_FORMATS,
         title="Up-regulated genes.",
-        file_name=f"{venn_directory}/venn_up_regulation",
+        file_name=f"{venn_directory}/venn_Up",
+        )
+dge_analysis.mk_df_for_each_intersection(
+        mutant1=MUTANT_SAMPLES[0],
+        set1=mutant_regulation_sets_directory[MUTANT_SAMPLES[0]]["Up"],
+        mutant2=MUTANT_SAMPLES[1],
+        set2=mutant_regulation_sets_directory[MUTANT_SAMPLES[1]]["Up"],
+        mutant3=MUTANT_SAMPLES[2],
+        set3=mutant_regulation_sets_directory[MUTANT_SAMPLES[2]]["Up"],
+        filtered_dataframes=sub_dataframes_filtered,
+        dataframes_directory_path=dfs_directory,
+        name="Up_intersections",
         )
 
 # Generate two more diagrams but only for the down-regulated genes
@@ -289,15 +277,29 @@ dge_analysis.generate_venn3_diagram(
         title="Down-regulated genes.",
         file_name=f"{venn_directory}/venn_down_regulation",
         )
+dge_analysis.mk_df_for_each_intersection(
+        mutant1=MUTANT_SAMPLES[0],
+        set1=mutant_regulation_sets_directory[MUTANT_SAMPLES[0]]["Down"],
+        mutant2=MUTANT_SAMPLES[1],
+        set2=mutant_regulation_sets_directory[MUTANT_SAMPLES[1]]["Down"],
+        mutant3=MUTANT_SAMPLES[2],
+        set3=mutant_regulation_sets_directory[MUTANT_SAMPLES[2]]["Down"],
+        filtered_dataframes=sub_dataframes_filtered,
+        dataframes_directory_path=dfs_directory,
+        name="Down_intersections",
+        )
 
 # Comparing sets for the 6 possible inverted regulations combinations.
 # Makes a venn diagramm and generates 7 dataframes for the genes of each
 # intersection.
-os.mkdir(f"{venn_directory}/inverted_regulations")
+inverted_reg_dir = f"{venn_directory}/inverted_regulations"
+os.mkdir(inverted_reg_dir)
 dge_analysis.get_inverted_regulations_and_mk_venns_and_dataframes(
         sets_dictionary=mutant_regulation_sets_directory,
         mutants=MUTANT_SAMPLES,
         plot_formats=PLOT_FORMATS,
-        venn_directory_path=f"{venn_directory}/inverted_regulations",
+        venn_directory_path=inverted_reg_dir,
+        filtered_dataframes=sub_dataframes_filtered,
+        dataframes_directory_path=dfs_directory,
         )
 

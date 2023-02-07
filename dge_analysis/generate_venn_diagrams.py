@@ -74,13 +74,13 @@ def generate_venn3_diagram_with_regulation_labels(
         - Third bit equals to the third set.
     """
 
-    set_array = [
+    set_list = [
             set1[0],
             set2[0],
             set3[0],
             ]
 
-    set_names = [
+    set_names_list = [
             set1[1],
             set2[1],
             set3[1],
@@ -90,68 +90,68 @@ def generate_venn3_diagram_with_regulation_labels(
     label_100 = (
             r"$\uparrow$"
                 +
-            f"{up_regulation_labels['100']}\n"
+            f"{len(up_regulation_labels['100'])}\n"
                 +
             r"$\downarrow$"
                 +
-            f"{down_regulation_labels['100']}"
+            f"{len(down_regulation_labels['100'])}"
             )
     label_110 = (
             r"$\uparrow$"
                 +
-            f"{up_regulation_labels['110']}\n"
+            f"{len(up_regulation_labels['110'])}\n"
                 +
             r"$\downarrow$"
                 +
-            f"{down_regulation_labels['110']}"
+            f"{len(down_regulation_labels['110'])}"
             )
     label_101 = (
             r"$\uparrow$"
                 +
-            f"{up_regulation_labels['101']}\n"
+            f"{len(up_regulation_labels['101'])}\n"
                 +
             r"$\downarrow$"
                 +
-            f"{down_regulation_labels['101']}"
+            f"{len(down_regulation_labels['101'])}"
             )
     label_111 = (
             r"$\uparrow$"
                 +
-            f"{up_regulation_labels['111']}\n"
+            f"{len(up_regulation_labels['111'])}\n"
                 +
             r"$\downarrow$"
                 +
-            f"{down_regulation_labels['111']}"
+            f"{len(down_regulation_labels['111'])}"
             )
     label_010 = (
             r"$\uparrow$"
                 +
-            f"{up_regulation_labels['010']}\n"
+            f"{len(up_regulation_labels['010'])}\n"
                 +
             r"$\downarrow$"
                 +
-            f"{down_regulation_labels['010']}"
+            f"{len(down_regulation_labels['010'])}"
             )
     label_011 = (
             r"$\uparrow$"
                 +
-            f"{up_regulation_labels['011']}\n"
+            f"{len(up_regulation_labels['011'])}\n"
                 +
             r"$\downarrow$"
                 +
-            f"{down_regulation_labels['011']}"
+            f"{len(down_regulation_labels['011'])}"
             )
     label_001 = (
             r"$\uparrow$"
                 +
-            f"{up_regulation_labels['001']}\n"
+            f"{len(up_regulation_labels['001'])}\n"
                 +
             r"$\downarrow$"
                 +
-            f"{down_regulation_labels['001']}"
+            f"{len(down_regulation_labels['001'])}"
             )
 
-    venn = venn3(set_array[0:3], set_names[0:3])
+    venn = venn3(set_list[0:3], set_names_list[0:3])
     # Setting the labels
     venn.get_label_by_id('100').set_text(label_100)
     venn.get_label_by_id('110').set_text(label_110)
@@ -169,7 +169,7 @@ def generate_venn3_diagram_with_regulation_labels(
     # Clears current figure
     plt.clf()
 
-    venn_unw = venn3_unweighted(set_array[0:3], set_names[0:3])
+    venn_unw = venn3_unweighted(set_list[0:3], set_names_list[0:3])
     venn_unw.get_label_by_id('100').set_text(label_100)
     venn_unw.get_label_by_id('110').set_text(label_110)
     venn_unw.get_label_by_id('111').set_text(label_111)
