@@ -217,10 +217,14 @@ def sort_df(df):
             )
 
     df = df[new_colums_names]
-    df = df.sort_values(
-            fc[0],
-            ascending=False,
-            )
+    try:
+        df = df.sort_values(
+                fc[0],
+                ascending=False,
+                )
+    except:
+        pass
+
     return df
 
 
@@ -304,13 +308,15 @@ def mk_df_for_each_intersection(
             df = pd.merge(
                     df,
                     mutant1_df,
+                    on="gene_id",
                     )
 
         if key[1] == str(1):
             mutant2_df.set_index("gene_id")
-            df = pd.merge(
+            df= pd.merge(
                     df,
                     mutant2_df,
+                    on="gene_id",
                     )
 
         if key[2] == str(1):
@@ -318,6 +324,7 @@ def mk_df_for_each_intersection(
             df = pd.merge(
                     df,
                     mutant3_df,
+                    on="gene_id",
                     )
 
         df = sort_df(df)

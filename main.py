@@ -67,7 +67,7 @@ except:
             # What type of data each column contains.
             dtype=mytypes,
             # Take "--" as missing values.
-            na_values=["--"],
+            na_values=["--", "-", "-//- && -", "",],
             )
 
 # Add a "Fold Change" column with values.
@@ -85,17 +85,15 @@ sub_dataframes = dge_analysis.generate_sub_dataframes(
         )
 
 sub_dataframes_filtered = {}
-
 # Merging another df
 df_to_merge = pd.read_excel(
         df_to_merge_file_name,
         engine="xlrd",
-        na_values=['--']
+        na_values=["--", "-", "-//- && -", "",]
         )
 dge_analysis.add_fold_change_columns(df_to_merge)
 dge_analysis.add_regulation_columns(df_to_merge)
 sub_dataframes[df_to_merge_mutant] = df_to_merge
-
 
 dfs_directory = dge_analysis.mk_new_dir("dataframes")
 volcano_directory = dge_analysis.mk_new_dir("volcano_plots")
