@@ -157,6 +157,8 @@ def generate_volcano_plot(
     volcano.axhline(log10_padj_threshold, zorder=0, c="grey", lw=1, ls="-." )
     volcano.axvline(log2FoldChange_threshold, zorder=0, c="grey",lw=1,ls="-.")
     volcano.axvline(-log2FoldChange_threshold, zorder=0, c="grey",lw=1,ls="-.")
+
+
     # The following two lines remove the top and right borders of the plot.
     volcano.spines["top"].set_visible(False)
     volcano.spines["right"].set_visible(False)
@@ -167,17 +169,9 @@ def generate_volcano_plot(
             +
             str(padj_threshold)
             +
-            "\n\t-$log_{10}$= "
-            +
-            str(round(log10_padj_threshold, 3))
-            +
             "\nFold Change >= "
             +
             str(foldchange_threshold)
-            +
-            "\n\t$log_{2}$= "
-            +
-            str(round(log2FoldChange_threshold,3))
             )
     # Modifying legend title. Otherwise it'd be "color"
     volcano.legend(title=legend_title)
