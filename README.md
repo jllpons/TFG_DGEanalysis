@@ -1,6 +1,6 @@
 # End of Degree Project: Differential Gene Expression Analysis.
 
-**NOTE**: This repository contains all of the scripts I've created for my Bachelor's End of Degree Project. Tha main motivation is being able to share what I've been able to code and being a way for me to gain experience with the git version control system and remote repositories. Thus, **this repository is not meant to host any functional or mantained program**.
+**NOTE**: This repository contains all of the scripts I've created for my Bachelor's End of Degree Project. The main motivation is being able to share what I've done and serve as a way for me to gain experience with the git version control system and remote repositories. Thus, **don't expect any fully functional and mantained program**.
 
 ---
 
