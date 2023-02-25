@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import json
 
 """
 Utilities like create a directory with a given name or (...)
@@ -36,3 +37,35 @@ def mk_new_dir(new_dir_name):
 
     # Returning the path as a string.
     return new_dir_path
+
+def mkconfigs():
+    """
+    WIP
+    """
+
+    json_3muts = {
+            "dataframe_file_name" : "path/to/df.csv or .xls",
+            "fold_change_threshold" : 1.5,
+            "p_value_threshold" : 0.05,
+            "padj_threshold" : 0.05,
+            "wild_type_sample" : "K12",
+            "mutant_samples" : ["geneA", "geneB", "geneC"],
+            "plot_formats" : ["pdf", "jpg", "svg"],
+            "df_to_merge" : {
+                "geneA" : "path/to/df_to_merge.csv or .xls"
+                }
+            }
+
+    with open(f"{os.getcwd()}/3muts_sample_config.json", "w") as j:
+        j.write(json.dumps(json_3muts, indent=4))
+
+
+def read_config_json_file(config_file):
+    """Reads WIP
+    """
+
+    with open(config_file, "r") as j:
+        config_dictionary = json.loads(j.read())
+
+    return config_dictionary
+

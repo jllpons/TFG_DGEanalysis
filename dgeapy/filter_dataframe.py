@@ -7,7 +7,7 @@ Dataframe handeling, filtering and sub-dataframe generation.
 
 import os
 import pandas as pd
-from dge_analysis.generate_venn_diagrams import generate_venn3_diagram
+from dgeapy.generate_venn_diagrams import generate_venn3_diagram
 
 
 #-------# Function Definitions #-----------------------------------------------#

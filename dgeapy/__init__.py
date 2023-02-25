@@ -2,6 +2,8 @@
 
 from dgeapy.recover_corrupt_file import recover_corrupted_file
 from dgeapy.utilities import mk_new_dir
+from dgeapy.utilities import mkconfigs
+from dgeapy.utilities import read_config_json_file
 from dgeapy.add_columns import add_fold_change_columns
 from dgeapy.add_columns import add_regulation_columns
 from dgeapy.add_columns import add_go_columns

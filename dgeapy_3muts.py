@@ -1,9 +1,82 @@
 #!/usr/bin/env python3
 
-import json
+"""Lincense¿?¿?
+"""
+
 import os
+import sys
+import json
+import argparse
+
 import pandas as pd
+
 import dgeapy
+
+
+def main():
+    """WIP
+    """
+
+    description = "Differential Gene Expression data analysis from dataframe" \
+            " containing data from 3 different mutants"
+
+    parser = argparse.ArgumentParser(
+                        description=description,
+                        usage="dgeapy.py 3muts <config.json>"
+                        )
+    parser.add_argument(
+            "configuration_json_file",
+            metavar="<config.json>",
+            nargs="?",
+            default="",
+            type=str,
+            help="path to JSON configuration file",
+            )
+
+    argvs = parser.parse_args()
+    if not argvs.configuration_json_file:
+        parser.print_help()
+        sys.exit("\n ** The JSON configuration file is required **")
+
+    config_file = os.path.abspath(argvs.configuration_json_file)
+    # Check that the config file exists
+    if not os.path.isfile(config_file):
+        raise FileNotFoundError(f"Could not find file: {config_file}")
+
+    # For the moment, read the JSON file
+    # TODO: make the funcntion work even if the JSON file has invalid syntax.
+    config_dictionary = read_config_json_file(config_file)
+
+    DF_FILE_PATH = config_dictionary["dataframe_file_path"]
+    if not os.path.isfile(DF_FILE_PATH):
+        raise FileNotFoundError(f"Could not find file: {DF_FILE_PATH}")
+
+    FOLD_CHANGE_THRESHOLD = config_dictionary["fold_change_threshold"]
+    P_VALUE_THRESHOLD = config_dictionary["p_value_threshold"]
+    PADJ_THRESHOLD = config_dictionary["padj_threshold"]
+    WILD_TYPE_SAMPLE = config_dictionary["wild_type_sample"]
+    MUTANT_SAMPLES = config_dictionary["mutant_samples"]
+    PLOT_FORMATS = config_dictionary["plot_formats"]
+
+    try:
+        DF_TO_MERGE = {}
+        for k in config_dictionary["df_to_merge"]:
+            DF_TO_MERGE[k] == config_dictionary["df_to_merge"][k]
+            if not os.path.isfile(DF_TO_MERGE[k]):
+                raise FileNotFoundError(f"Could not find file: {DF_TO_MERGE[k]}")
+    except:
+        DF_TO_MERGE = None
+
+    df = pd.read_csv(DF_FILE_PATH, na_values=["--", "-", "-//- && -", "",])
+
+    # TODO: chek the following functions. If they need 3 muntants, change the name
+    dgeapy.add_fold_change_columns(df)
+    dgeapy.add_regulation_columns(df)
+
+    sub_dfs = dgeapy.generate_sub_dataframes(
+                        dataframe=df,
+                        mutants_list=MUTANT_SAMPLES,
+                        )
 
 #-------# Script Configuration #-----------------------------------------------#
 
@@ -300,4 +373,7 @@ dgeapy.get_inverted_regulations_and_mk_venns_and_dataframes(
         filtered_dataframes=sub_dataframes_filtered,
         dataframes_directory_path=dfs_directory,
         )
+
+if __name__ == "__main__":
+    main()
 

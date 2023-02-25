@@ -12,8 +12,6 @@ dgeapy.py is a script that tries to analyse Differential Gene Expression (DGE) d
 
 - Python 3 (3.9+ preferably)
 - Uses the following packages:
-	- [os](<https://docs.python.org/3/library/os.html>): Miscellaneous operating system interfaces
-	- [json](<https://docs.python.org/3/library/json.html>): JSON encoder and decoder
 	- [pandas](<https://pypi.org/project/pandas/>): Data analysis toolkit
 	- [numpy](<https://pypi.org/project/numpy/>): Scientific computing
 	- [matplotlib](<https://pypi.org/project/matplotlib/>): Data visualization
