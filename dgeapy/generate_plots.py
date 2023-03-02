@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
+"""Plot generation for DGE analysis using numpy, matplotlib and seaborn.
+"""
 
-"""
-Plot generation for DGE analysis using numpy, pandas, matplotlib and seaborn.
-"""
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+
 
 
 #-------# Function Definitions #-----------------------------------------------#
@@ -19,19 +18,20 @@ def generate_regulation_countplot(
         mutant_name,
         padj_threshold,
         foldchange_threshold,
+        hue_order,
         plot_formats,
         ):
-    """
-    Creates a count plot representing the number of genes that are:
-        1) Above the p-vale threshold
-        2) Under the p-vale and foldchange threshold.
-        3) Under the p-vale and above the foldchange threshold.
+    """Creates a count plot representing the number of genes that are:
+            1) Above the p-vale threshold
+            2) Under the p-vale and foldchange threshold.
+            3) Under the p-vale and above the foldchange threshold.
     """
 
     count_plot = sns.countplot(
-            x=data,
-            palette=("silver", "cornflowerblue", "indianred"),
-            )
+                        x=data,
+                        palette=("silver", "cornflowerblue", "indianred"),
+                        hue_order=hue_order,
+                        )
 
     title = (
             mutant_name
@@ -62,15 +62,14 @@ def generate_regulation_countplot(
 def generate_volcano_plot(
         dataframe,
         file_path,
-        x_axis_values,
-        y_axis_values,
         foldchange_threshold,
+        log2foldchange_column_name,
         padj_threshold,
+        padj_column_name,
         mutant_name,
         plot_formats,
         ):
-    """
-    Generates a volcano plot with log2 Fold change values on the x axis, and
+    """Generates a volcano plot with log2 Fold change values on the x axis, and
     log10 padj values on the y axis. Colors values according to the
     corresponding preestablished threshold value for each axis.
     It also generates a countplot for a better visualization of the amount of
@@ -83,14 +82,14 @@ def generate_volcano_plot(
     log10_padj_threshold = -np.log10(padj_threshold)
 
     # Adding -log10(padj) column to the dataframe
-    dataframe["-log10(padj)"] = -np.log10(dataframe[y_axis_values])
+    dataframe["-log10(padj)"] = -np.log10(dataframe[padj_column_name])
 
     # Creating a colomun wich values will be:
     # -NO if the gene's padj or Foldchange values doesn't surpass the thresholds
     # -DOWN if it's foldchange value is lesser than the negative threshold
     # -UP if it's foldchange value is greater than the positive threshold
     regulation_column = []
-    for a, b in zip(dataframe[x_axis_values], dataframe["-log10(padj)"]):
+    for a, b in zip(dataframe[log2foldchange_column_name], dataframe["-log10(padj)"]):
 
         if b < log10_padj_threshold:
             regulation_column.append("NO")
@@ -132,6 +131,7 @@ def generate_volcano_plot(
             mutant_name=mutant_name,
             padj_threshold=padj_threshold,
             foldchange_threshold=foldchange_threshold,
+            hue_order=[no_newname, down_newname, up_newname],
             plot_formats=plot_formats,
             )
 
@@ -142,10 +142,10 @@ def generate_volcano_plot(
     # Creating the plot
     volcano = sns.scatterplot(
             data=dataframe,
-            x=x_axis_values,
+            x=log2foldchange_column_name,
             y="-log10(padj)",
             hue="color",
-            hue_order=[ down_newname, no_newname, up_newname ],
+            hue_order=[down_newname, no_newname, up_newname],
             palette=("cornflowerblue", "silver", "indianred"),
             )
 
@@ -214,8 +214,7 @@ def generate_cooler_volcano_plot(
         mutant_name,
         plot_formats,
         ):
-    """
-    Generates a volcano plot with log2 Fold change values on the x axis, and
+    """Generates a volcano plot with log2 Fold change values on the x axis, and
     log10 padj values on the y axis.
     """
 

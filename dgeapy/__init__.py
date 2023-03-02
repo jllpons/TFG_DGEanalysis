@@ -7,10 +7,10 @@ from dgeapy.utilities import read_config_json_file
 from dgeapy.add_columns import add_fold_change_columns
 from dgeapy.add_columns import add_regulation_columns
 from dgeapy.add_columns import add_go_columns
-from dgeapy.filter_dataframe import generate_sub_dataframes
+from dgeapy.filter_dataframe import generate_sub_dataframes_3muts
 from dgeapy.filter_dataframe import column_names_to_check
 from dgeapy.filter_dataframe import filter_FC_PVALUE_PADJ
-from dgeapy.filter_dataframe import get_gene_ids_list_for_intersections
+from dgeapy.filter_dataframe import get_gene_ids_set_for_intersections
 from dgeapy.filter_dataframe import mk_df_for_each_intersection
 from dgeapy.filter_dataframe import get_inverted_regulations_and_mk_venns_and_dataframes
 from dgeapy.generate_plots import generate_volcano_plot

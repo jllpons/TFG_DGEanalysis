@@ -111,7 +111,7 @@ def add_regulation_columns(dataframe):
                     new_column_values.append("Unchanged")
                 # In any other situation, add "--"
                 else:
-                    new_column_values.append("--")
+                    new_column_values.append(np.nan)
 
             dataframe.insert(
                     # Location where new_colmn will be inserted.

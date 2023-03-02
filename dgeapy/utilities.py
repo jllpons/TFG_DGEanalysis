@@ -39,11 +39,10 @@ def mk_new_dir(new_dir_name):
     return new_dir_path
 
 def mkconfigs():
-    """
-    WIP
+    """Creates sample JSON configuration files.
     """
 
-    json_3muts = {
+    json_multiplemuts = {
             "dataframe_file_name" : "path/to/df.csv or .xls",
             "fold_change_threshold" : 1.5,
             "p_value_threshold" : 0.05,
@@ -56,13 +55,14 @@ def mkconfigs():
                 }
             }
 
-    with open(f"{os.getcwd()}/3muts_sample_config.json", "w") as j:
-        j.write(json.dumps(json_3muts, indent=4))
+    with open(f"{os.getcwd()}/multiplemuts_sample_config.json", "w") as j:
+        j.write(json.dumps(json_multiplemuts, indent=4))
 
 
 def read_config_json_file(config_file):
-    """Reads WIP
+    """Reads JSON configuration file.
     """
+    # TODO: Read the file even if it has syntax errors.
 
     with open(config_file, "r") as j:
         config_dictionary = json.loads(j.read())

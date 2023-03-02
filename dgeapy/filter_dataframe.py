@@ -1,24 +1,22 @@
 #!/usr/bin/env python3
 
-"""
-Dataframe handeling, filtering and sub-dataframe generation.
+"""Dataframe handeling, filtering and sub-dataframe generation.
 """
 
 
 import os
-import pandas as pd
-from dgeapy.generate_venn_diagrams import generate_venn3_diagram
 
+import pandas as pd
+
+from .generate_venn_diagrams import generate_venn3_diagram
 
 #-------# Function Definitions #-----------------------------------------------#
 
-
-def generate_sub_dataframes(
+def generate_sub_dataframes_3muts(
         dataframe,
         mutants_list,
         ):
-    """
-    This function generates a sub-dataframe for each comparison that's been
+    """This function generates a sub-dataframe for each comparison that's been
     done in the given dataframe. In this case, this is done by selecting the
     columns related to each mutant and inserting all of them in their
     respective sub-dataframe. Returns a dictionary where the name of the mutant
@@ -45,14 +43,10 @@ def generate_sub_dataframes(
             # mutant names that are not related to the mutant name selected
             # in the for loop. If it does not contain them, the name is appended
             # to the wanted_column_names list.
-            # NOTE: This is not optimal because I'm assuming that the number of
-            #       mutants in all of the given dataframes will be 3.
             if (
                     unwanted_mutant_names[0] not in name
                     and
                     unwanted_mutant_names[1] not in name
-                    # Here you could add "unwanted_mutant_names[2] if there
-                    # are 4 mutants. Or delate the previous line if there are 2.
                 ):
                 wanted_column_names.append(name)
 
@@ -60,7 +54,7 @@ def generate_sub_dataframes(
         new_dataframe_columns = {}
         # For each wanted column name.
         for column_name in wanted_column_names:
-            # Add the values with the column name as tag to the dictionary.
+            # Add the values with the column name as key to the dictionary.
             new_dataframe_columns[column_name] = dataframe[
                     column_name
                     ].values.tolist()
@@ -74,10 +68,8 @@ def generate_sub_dataframes(
 
     return sub_dataframes
 
-
 def column_names_to_check(dataframe):
-    """
-    This function checks if "_FoldChange", "pvalue" or "padj" are present in any
+    """This function checks if "_FoldChange", "pvalue" or "padj" are present in any
     column name of the given dataframe and returns the names as a dictionary.
     """
 
@@ -86,6 +78,7 @@ def column_names_to_check(dataframe):
     # Here we'll be storing the selected column names.
     column_names_to_check = {}
 
+    # TODO: add more possibilities to each column name
     # For each name in the column names list.
     for name in column_names:
         # If if contains "_FoldChange" add it to the columns_to_check list.
@@ -107,36 +100,35 @@ def column_names_to_check(dataframe):
 def filter_FC_PVALUE_PADJ(
         dataframe,
         foldchange_threshold,
+        foldchange_column_name,
         p_value_threshold,
+        p_value_column_name,
         padj_threshold,
-        column_names_to_check
+        padj_column_name,
         ):
-    """
-    This function takes a dataframe and returns it with its values filtered
-    according to some given values. It needs a list of columns to check in
-    a specific order.
+    """This function takes a dataframe and returns it with its values filtered
+    according to some given values.
     """
 
     # Assignin the filtered dataframe to a variable.
     filtered_dataframe = dataframe[ # The original dataframe.
-            (dataframe[column_names_to_check["FoldChange"]]
+            (dataframe[foldchange_column_name]
                 >=
             foldchange_threshold)
             & # "&" equals "and" operator in pandas.
-            (dataframe[column_names_to_check["pvalue"]] < p_value_threshold)
+            (dataframe[p_value_column_name] < p_value_threshold)
             &
-            (dataframe[column_names_to_check["padj"]] < padj_threshold)
+            (dataframe[padj_column_name] < padj_threshold)
             ]
 
     return filtered_dataframe
 
-def get_gene_ids_list_for_intersections(
+def get_gene_ids_set_for_intersections(
         set1,
         set2,
         set3,
         ):
-    """
-    Computes lists contaning gene_ids. Generates one list for each intersection.
+    """Computes lists contaning gene_ids. Generates one list for each intersection.
     Returns a dictionary where the k eys are binary numbers that represent the
     list for each intersection:
         - First bit equals to the first set.
@@ -144,24 +136,46 @@ def get_gene_ids_list_for_intersections(
         - Third bit equals to the third set.
     """
 
-    intersections_dict = {}
-    intersections_dict["100"] = [i for i in set1 if i not in set2 and i not in set3]
-    intersections_dict["110"] = [i for i in set1 if i in set2 and i not in set3]
-    intersections_dict["101"] = [i for i in set1 if i not in set2 and i in set3]
-    intersections_dict["111"] = [i for i in set1 if i in set2 and i in set3]
-    intersections_dict["010"] = [i for i in set2 if i not in set1 and i not in set3]
-    intersections_dict["011"] = [i for i in set2 if i not in set1 and i in set3]
-    intersections_dict["001"] = [i for i in set3 if i not in set1 and i not in set2]
+    intersections_dict = {
+            "100" : set(),
+            "010" : set(),
+            "001" : set(),
+            "110" : set(),
+            "101" : set(),
+            "011" : set(),
+            "111" : set()
+            }
+    for gene in set1:
+        if gene in set2 and gene in set3:
+            intersections_dict["111"].add(gene)
+        elif gene in set2 and gene not in set3:
+            intersections_dict["110"].add(gene)
+        elif gene not in set2 and gene in set3:
+            intersections_dict["101"].add(gene)
+        elif gene not in set2 and gene not in set3:
+            intersections_dict["100"].add(gene)
+
+    for gene in set2:
+        if gene not in set1 and gene in set3:
+            intersections_dict["011"].add(gene)
+        elif gene not in set1 and gene not in set3:
+            intersections_dict["010"].add(gene)
+
+    for gene in set3:
+        if gene not in set1 and gene not in set2:
+            intersections_dict["001"].add(gene)
 
     return intersections_dict
 
 
 def sort_df(df):
-    """
+    """Takes a df generated in mk_df_for_each_intersection() and sorts the
+    columns. Rows are sorted taking the first foldchange column values.
     """
 
     column_names = df.columns.values.tolist()
 
+    # Column names can be classified into this 7 lists.
     gene_id = []
     log2FC = []
     fc = []
@@ -169,6 +183,7 @@ def sort_df(df):
     pvalue = []
     padj = []
     gene_info = []
+
     # There's probably a better way of doing this
     for i in column_names:
         if "gene_id" in i:
@@ -200,62 +215,61 @@ def sort_df(df):
         elif "tf_family" in i:
             gene_info.append(i)
 
+    # We have the column names goruped so we can choos the ordrer. Gene info
+    # columns have the same values so we only take the first 8.
     new_colums_names = (
             gene_id
-            +
-            log2FC
-            +
-            fc
-            +
-            regulation
-            +
-            pvalue
-            +
-            padj
-            +
-            gene_info[:8]
+            + log2FC
+            + fc
+            + regulation
+            + pvalue
+            + padj
+            + gene_info[:8]
             )
 
     df = df[new_colums_names]
-    try:
-        df = df.sort_values(
+    df = df.sort_values(
                 fc[0],
                 ascending=False,
                 )
-    except:
-        pass
 
     return df
 
 
 def mk_df_for_each_intersection(
-        mutant1,
-        set1,
-        mutant2,
-        set2,
-        mutant3,
-        set3,
-        filtered_dataframes,
-        dataframes_directory_path,
-        name,
+        mutant1_gene_set,
+        mutant1_name,
+        mutant2_gene_set,
+        mutant2_name,
+        mutant3_gene_set,
+        mutant3_name,
+        sub_dfs,
+        path,
+        file_names,
         ):
+    """Takes 3 sets of gene IDs and computes the 7 possible intersections
+    Creates a dataframe for each intersection that will display all of the
+    relevant information for each gene.
+    """
 
-    new_dir = f"{dataframes_directory_path}/{name}"
-    os.mkdir(new_dir)
+    # Storing output files in here
+    os.mkdir(f"{path}/{file_names}")
 
-    intersections_dict = get_gene_ids_list_for_intersections(
-            set1=set1,
-            set2=set2,
-            set3=set3,
+    # Generate a dictionary contaning all of the gene IDs intersections.
+    intersections_dict = get_gene_ids_set_for_intersections(
+            set1=mutant1_gene_set,
+            set2=mutant2_gene_set,
+            set3=mutant3_gene_set,
             )
 
-    mutant1_df = filtered_dataframes[mutant1][[
+    # Columns that the generated dataframes will contain.
+    mutant1_df = sub_dfs[mutant1_name]["DEG"][[
         "gene_id",
-        f"{mutant1}vsWT_log2FoldChange",
-        f"{mutant1}vsWT_FoldChange",
-        f"{mutant1}vsWT_Regulation",
-        f"{mutant1}vsWT_pvalue",
-        f"{mutant1}vsWT_padj",
+        f"{mutant1_name}vsWT_log2FoldChange",
+        f"{mutant1_name}vsWT_FoldChange",
+        f"{mutant1_name}vsWT_Regulation",
+        f"{mutant1_name}vsWT_pvalue",
+        f"{mutant1_name}vsWT_padj",
         "gene_chr",
         "gene_start",
         "gene_end",
@@ -265,13 +279,13 @@ def mk_df_for_each_intersection(
         "gene_description",
         "tf_family",
         ]]
-    mutant2_df = filtered_dataframes[mutant2][[
+    mutant2_df = sub_dfs[mutant2_name]["DEG"][[
         "gene_id",
-        f"{mutant2}vsWT_log2FoldChange",
-        f"{mutant2}vsWT_FoldChange",
-        f"{mutant2}vsWT_Regulation",
-        f"{mutant2}vsWT_pvalue",
-        f"{mutant2}vsWT_padj",
+        f"{mutant2_name}vsWT_log2FoldChange",
+        f"{mutant2_name}vsWT_FoldChange",
+        f"{mutant2_name}vsWT_Regulation",
+        f"{mutant2_name}vsWT_pvalue",
+        f"{mutant2_name}vsWT_padj",
         "gene_chr",
         "gene_start",
         "gene_end",
@@ -281,13 +295,13 @@ def mk_df_for_each_intersection(
         "gene_description",
         "tf_family",
         ]]
-    mutant3_df = filtered_dataframes[mutant3][[
+    mutant3_df = sub_dfs[mutant3_name]["DEG"][[
         "gene_id",
-        f"{mutant3}vsWT_log2FoldChange",
-        f"{mutant3}vsWT_FoldChange",
-        f"{mutant3}vsWT_Regulation",
-        f"{mutant3}vsWT_pvalue",
-        f"{mutant3}vsWT_padj",
+        f"{mutant3_name}vsWT_log2FoldChange",
+        f"{mutant3_name}vsWT_FoldChange",
+        f"{mutant3_name}vsWT_Regulation",
+        f"{mutant3_name}vsWT_pvalue",
+        f"{mutant3_name}vsWT_padj",
         "gene_chr",
         "gene_start",
         "gene_end",
@@ -298,11 +312,19 @@ def mk_df_for_each_intersection(
         "tf_family",
         ]]
 
+    # For each one of the intersections
     for key in intersections_dict:
 
-        df = pd.DataFrame(data={"gene_id" : intersections_dict[key]})
+        # Making a dataframe containing only the gene IDs presents
+        # In that intersection. Also setting the gene IDs as index.
+        df = pd.DataFrame(data={"gene_id" : list(intersections_dict[key])})
         df.set_index("gene_id")
 
+        # If first bit is 1, there're gene IDs from the 1st mutant DE genes
+        # that are present in that intersection. So we take the
+        # 1st mutant DE genes dataframe and we add all of the columns
+        # showed above for ONLY the gene IDs that are already present
+        # in the previosly created df.
         if key[0] == str(1):
             mutant1_df.set_index("gene_id")
             df = pd.merge(
@@ -311,6 +333,8 @@ def mk_df_for_each_intersection(
                     on="gene_id",
                     )
 
+        # The second bit being 1 means there're gene IDs form the 2nd mutant
+        # DE genes present in that intersection. We do the same as above.
         if key[1] == str(1):
             mutant2_df.set_index("gene_id")
             df= pd.merge(
@@ -319,6 +343,8 @@ def mk_df_for_each_intersection(
                     on="gene_id",
                     )
 
+        # The third bit being 1 means there're gene IDs form the 3rd mutant
+        # DE genes present in that intersection. We do the same as before.
         if key[2] == str(1):
             mutant3_df.set_index("gene_id")
             df = pd.merge(
@@ -327,15 +353,16 @@ def mk_df_for_each_intersection(
                     on="gene_id",
                     )
 
+        # We sort the columns for a cleaner visualization
         df = sort_df(df)
 
         df.to_csv(
-                f"{new_dir}/{name}_{key}.csv",
+                f"{path}/{file_names}/{file_names}_{key}.tsv",
                 index=False,
                 )
 
         df.to_excel(
-                f"{new_dir}/{name}_{key}.xlsx",
+                f"{path}/{file_names}/{file_names}_{key}.xlsx",
                 index=False
                 )
 
@@ -343,116 +370,90 @@ def mk_df_for_each_intersection(
 def get_inverted_regulations_and_mk_venns_and_dataframes(
         sets_dictionary,
         mutants,
+        sub_dfs,
         plot_formats,
         venn_directory_path,
-        filtered_dataframes,
         dataframes_directory_path,
         ):
+    """Generates the venn diagramas and the correspoding intersection
+    dataframe for each one of the possible inverted regulations combinations
     """
-    Work in progress
-    """
 
-    for i in range(len(mutants)):
-        mutant1 = mutants[i]
+    inverted_regulation_dict = {}
+    regulations = ("Up", "Down")
 
-        for regulation in sets_dictionary[mutants[i]]:
+    for mut in mutants:
+        other_mutants = [m for m in mutants if m is not mut]
 
-            if regulation != "DEG":
-                mutant1_regulation = sets_dictionary[mutant1][regulation]
-                mutants_2_and_3_list = [m for m in mutants if m is not mutant1]
-                mutant2 = mutants_2_and_3_list[0]
-                mutant3 = mutants_2_and_3_list[1]
+        for reg in regulations:
 
-                if regulation == "Up":
-                    mutant1_label = (r"$\uparrow$" + str(mutant1))
-                    mutant2_regulation = sets_dictionary[mutant2]["Down"]
-                    mutant2_label = (r"$\downarrow$" + str(mutant2))
-                    mutant3_regulation = sets_dictionary[mutant3]["Down"]
-                    mutant3_label = (r"$\downarrow$" + str(mutant3))
-                    name = f"{mutant1}_up_others_down"
+            inverted_regulation_dict[mut] = {
+                    "reg" : reg,
+                    "label" : (r"$\uparrow$" + mut)
+                    }
 
-                else:
-                    mutant1_label = (r"$\downarrow$" + str(mutant1))
-                    mutant2_regulation = sets_dictionary[mutant2]["Up"]
-                    mutant2_label = (r"$\uparrow$" + str(mutant2))
-                    mutant3_regulation = sets_dictionary[mutant3]["Up"]
-                    mutant3_label = (r"$\uparrow$" + str(mutant3))
-                    name = f"{mutant1}_down_others_up"
+            other_reg = "Down"
+            inverted_regulation_dict[other_mutants[0]] = {
+                "reg" : other_reg,
+                "label" : (r"$\downarrow$" + other_mutants[0])
+                }
+            inverted_regulation_dict[other_mutants[1]] = {
+                "reg" : other_reg,
+                "label" : (r"$\downarrow$" + other_mutants[1])
+                }
 
-                # I'm doing this because i want the mutants to have the same
-                # spot and color in the different venn diagrams
-                muts = [mutant1, mutant2, mutant3]
-                regulations = [mutant1_regulation, mutant2_regulation, mutant3_regulation]
-                labels = [mutant1_label, mutant2_label, mutant3_label]
+            name = f"{mut}_Up_others_Down"
 
-                if i == 0:
-                    generate_venn3_diagram(
-                            set1=(regulations[0], labels[0]),
-                            set2=(regulations[1], labels[1]),
-                            set3=(regulations[2], labels[2]),
-                            plot_formats=plot_formats,
-                            title="Differentially expressed genes.",
-                            file_name=f"{venn_directory_path}/venn_{name}",
-                            )
+            if reg == "Down":
+                inverted_regulation_dict[mut] = {
+                        "reg" : reg,
+                        "label" : (r"$\downarrow$" + mut)
+                        }
 
-                    mk_df_for_each_intersection(
-                            mutant1=muts[0],
-                            set1=regulations[0],
-                            mutant2=muts[1],
-                            set2=regulations[1],
-                            mutant3=muts[2],
-                            set3=regulations[2],
-                            filtered_dataframes=filtered_dataframes,
-                            dataframes_directory_path=dataframes_directory_path,
-                            name=name,
-                            )
+                other_reg = "Up"
+                inverted_regulation_dict[other_mutants[0]] = {
+                    "reg" : other_reg,
+                    "label" : (r"$\uparrow$" + other_mutants[0])
+                    }
+                inverted_regulation_dict[other_mutants[1]] = {
+                    "reg" : other_reg,
+                    "label" : (r"$\uparrow$" + other_mutants[1])
+                    }
 
-                elif i == 1:
-                    generate_venn3_diagram(
-                            set1=(regulations[1], labels[1]),
-                            set2=(regulations[0], labels[0]),
-                            set3=(regulations[2], labels[2]),
-                            plot_formats=plot_formats,
-                            title="Differentially expressed genes.",
-                            file_name=f"{venn_directory_path}/venn_{name}",
-                            )
+                name = f"{mut}_Down_others_Up"
 
-                    mk_df_for_each_intersection(
-                            mutant1=muts[1],
-                            set1=regulations[1],
-                            mutant2=muts[0],
-                            set2=regulations[0],
-                            mutant3=muts[2],
-                            set3=regulations[2],
-                            filtered_dataframes=filtered_dataframes,
-                            dataframes_directory_path=dataframes_directory_path,
-                            name=name,
-                            )
-
-
-                elif i == 2:
-                    generate_venn3_diagram(
-                            set1=(regulations[1], labels[1]),
-                            set2=(regulations[2], labels[2]),
-                            set3=(regulations[0], labels[0]),
-                            plot_formats=plot_formats,
-                            title="Differentially expressed genes.",
-                            file_name=f"{venn_directory_path}/venn_{name}",
-                            )
-
-                    mk_df_for_each_intersection(
-                            mutant1=muts[1],
-                            set1=regulations[1],
-                            mutant2=muts[2],
-                            set2=regulations[2],
-                            mutant3=muts[0],
-                            set3=regulations[0],
-                            filtered_dataframes=filtered_dataframes,
-                            dataframes_directory_path=dataframes_directory_path,
-                            name=name,
-                            )
-
-
-
-
+            generate_venn3_diagram(
+                    mutant1_gene_set=sets_dictionary[mutants[0]][
+                        inverted_regulation_dict[mutants[0]]["reg"]
+                        ],
+                    mutant1_name=inverted_regulation_dict[mutants[0]]["label"],
+                    mutant2_gene_set=sets_dictionary[mutants[1]][
+                        inverted_regulation_dict[mutants[1]]["reg"]
+                        ],
+                    mutant2_name=inverted_regulation_dict[mutants[1]]["label"],
+                    mutant3_gene_set=sets_dictionary[mutants[2]][
+                        inverted_regulation_dict[mutants[2]]["reg"]
+                        ],
+                    mutant3_name=inverted_regulation_dict[mutants[2]]["label"],
+                    plot_formats=plot_formats,
+                    title="Inverted regulations.",
+                    path=f"{venn_directory_path}/{name}",
+                    )
+            mk_df_for_each_intersection(
+                mutant1_gene_set=sets_dictionary[mutants[0]][
+                    inverted_regulation_dict[mutants[0]]["reg"]
+                    ],
+                mutant1_name=mutants[0],
+                mutant2_gene_set=sets_dictionary[mutants[1]][
+                    inverted_regulation_dict[mutants[1]]["reg"]
+                    ],
+                mutant2_name=mutants[1],
+                mutant3_gene_set=sets_dictionary[mutants[2]][
+                    inverted_regulation_dict[mutants[2]]["reg"]
+                    ],
+                mutant3_name=mutants[2],
+                sub_dfs=sub_dfs,
+                path=dataframes_directory_path,
+                file_names=name
+                )
 

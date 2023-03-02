@@ -1,46 +1,38 @@
 #!/usr/bin/env python3
 
+"""3-circle Venn diagram generation functions.
+"""
+
 import matplotlib.pyplot as plt
-from matplotlib_venn import venn3
-from matplotlib_venn import venn3_unweighted
-
-"""
-3-circle Venn diagram generation functions.
-"""
+from matplotlib_venn import venn3, venn3_unweighted
 
 
-#-------# Functions Definitions #----------------------------------------------#
+#-------# Function Definitions #-----------------------------------------------#
 
 def generate_venn3_diagram(
-        set1,
-        set2,
-        set3,
+        mutant1_gene_set,
+        mutant1_name,
+        mutant2_gene_set,
+        mutant2_name,
+        mutant3_gene_set,
+        mutant3_name,
         plot_formats,
         title,
-        file_name,
+        path,
         ):
-    """
-    Generate a Venn diagram from 3 given sets and their respective names.
+    """Generate a Venn diagram from 3 given sets and their respective names.
     """
 
-    set_array = [
-            set1[0],
-            set2[0],
-            set3[0],
-            ]
+    set_array = [mutant1_gene_set, mutant2_gene_set, mutant3_gene_set]
 
-    set_names = [
-            set1[1],
-            set2[1],
-            set3[1],
-            ]
+    set_names = [mutant1_name, mutant2_name, mutant3_name]
 
     venn3(set_array[0:3], set_names[0:3])
 
     plt.title(title)
 
     for format in plot_formats:
-        plt.savefig(f"{file_name}.{format}")
+        plt.savefig(f"{path}.{format}")
 
     # Clears current figure
     plt.clf()
@@ -50,41 +42,36 @@ def generate_venn3_diagram(
     plt.title(title)
 
     for format in plot_formats:
-        plt.savefig(f"{file_name}_unweighted.{format}")
+        plt.savefig(f"{path}_unweighted.{format}")
 
     # Clears current figure
     plt.clf()
 
 
 def generate_venn3_diagram_with_regulation_labels(
-        set1,
-        set2,
-        set3,
+        mutant1_gene_set,
+        mutant1_name,
+        mutant2_gene_set,
+        mutant2_name,
+        mutant3_gene_set,
+        mutant3_name,
         up_regulation_labels,
         down_regulation_labels,
         plot_formats,
         title,
-        file_name,
+        file_path,
         ):
-    """
-    Generates a venn diagram of 3 sets with custom labels.
+    """Generates a venn diagram of 3 sets with custom labels.
     Labels are represented binary numbers that represent each intersection:
         - First bit equals to the first set.
         - Second bit equals to the second set.
         - Third bit equals to the third set.
     """
 
-    set_list = [
-            set1[0],
-            set2[0],
-            set3[0],
-            ]
 
-    set_names_list = [
-            set1[1],
-            set2[1],
-            set3[1],
-            ]
+    set_array = [mutant1_gene_set, mutant2_gene_set, mutant3_gene_set]
+
+    set_names = [mutant1_name, mutant2_name, mutant3_name]
 
     # Preparing the lables.
     label_100 = (
@@ -151,7 +138,7 @@ def generate_venn3_diagram_with_regulation_labels(
             f"{len(down_regulation_labels['001'])}"
             )
 
-    venn = venn3(set_list[0:3], set_names_list[0:3])
+    venn = venn3(set_array, set_names)
     # Setting the labels
     venn.get_label_by_id('100').set_text(label_100)
     venn.get_label_by_id('110').set_text(label_110)
@@ -164,12 +151,12 @@ def generate_venn3_diagram_with_regulation_labels(
     plt.title(title)
 
     for format in plot_formats:
-        plt.savefig(f"{file_name}.{format}")
+        plt.savefig(f"{file_path}.{format}")
 
     # Clears current figure
     plt.clf()
 
-    venn_unw = venn3_unweighted(set_list[0:3], set_names_list[0:3])
+    venn_unw = venn3_unweighted(set_array, set_names)
     venn_unw.get_label_by_id('100').set_text(label_100)
     venn_unw.get_label_by_id('110').set_text(label_110)
     venn_unw.get_label_by_id('111').set_text(label_111)
@@ -181,7 +168,7 @@ def generate_venn3_diagram_with_regulation_labels(
     plt.title(title)
 
     for format in plot_formats:
-        plt.savefig(f"{file_name}_unweighted.{format}")
+        plt.savefig(f"{file_path}_unweighted.{format}")
 
     # Clears current figure
     plt.clf()
