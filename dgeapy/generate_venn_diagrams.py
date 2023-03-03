@@ -32,7 +32,10 @@ def generate_venn3_diagram(
     plt.title(title)
 
     for format in plot_formats:
-        plt.savefig(f"{path}.{format}")
+        plt.savefig(f"{path}.{format}", dpi=300)
+
+        if format == "png":
+            plt.savefig(f"{path}_transparent-bg.{format}", dpi=300, transparent=True)
 
     # Clears current figure
     plt.clf()
@@ -42,7 +45,14 @@ def generate_venn3_diagram(
     plt.title(title)
 
     for format in plot_formats:
-        plt.savefig(f"{path}_unweighted.{format}")
+        plt.savefig(f"{path}_unweighted.{format}", dpi=300)
+
+        if format == "png":
+            plt.savefig(
+                    f"{path}_unweighted_transparent-bg.{format}",
+                    dpi=300,
+                    transparent=True
+                    )
 
     # Clears current figure
     plt.clf()
@@ -151,7 +161,14 @@ def generate_venn3_diagram_with_regulation_labels(
     plt.title(title)
 
     for format in plot_formats:
-        plt.savefig(f"{file_path}.{format}")
+        plt.savefig(f"{file_path}.{format}", dpi=300)
+
+        if format == "png":
+            plt.savefig(
+                    f"{file_path}_transparent-bg.{format}",
+                    dpi=300,
+                    transparent=True
+                    )
 
     # Clears current figure
     plt.clf()
@@ -168,7 +185,14 @@ def generate_venn3_diagram_with_regulation_labels(
     plt.title(title)
 
     for format in plot_formats:
-        plt.savefig(f"{file_path}_unweighted.{format}")
+        plt.savefig(f"{file_path}.{format}", dpi=300)
+
+        if format == "png":
+            plt.savefig(
+                    f"{file_path}_transparent-bg.{format}",
+                    dpi=300,
+                    transparent=True
+                    )
 
     # Clears current figure
     plt.clf()

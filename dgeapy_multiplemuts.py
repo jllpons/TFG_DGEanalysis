@@ -94,7 +94,7 @@ def main():
             sub_dfs[k] = pd.read_csv(
                                 DF_TO_MERGE[k],
                                 sep="\t",
-                                na_values=["--", "-", "-//- && -", "",]
+                                na_values=["--", "",]
                                 )
 
 
