@@ -12,10 +12,14 @@ dgeapy.py is a script that tries to analyse Differential Gene Expression (DGE) d
 
 - Python 3 (3.9+ preferably)
 - Uses the following packages:
-	- [pandas](<https://pypi.org/project/pandas/>): Data analysis toolkit
-	- [numpy](<https://pypi.org/project/numpy/>): Scientific computing
-	- [matplotlib](<https://pypi.org/project/matplotlib/>): Data visualization
-	- [seaborn](<https://pypi.org/project/seaborn/>): Stadistical data visualisation
+    - For the analysis:
+        - [pandas](<https://pypi.org/project/pandas/>): dataframe analysis
+        - [numpy](<https://pypi.org/project/numpy/>): computing
+    - Data visualisation
+        - [matplotlib](<https://pypi.org/project/matplotlib/>): low-level manipulations.
+        - [seaborn](<https://pypi.org/project/seaborn/>): high-level manipulations.
+        - [matplotlib-venn](<https://pypi.org/project/matplotlib-venn/>): venn diagram generation.
+        - [UpSetPlot](<https://pypi.org/project/UpSetPlot/0.8.0/>): upset plot generation.
 
 ## Installation
 

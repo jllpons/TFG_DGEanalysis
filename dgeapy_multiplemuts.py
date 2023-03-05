@@ -120,6 +120,8 @@ def main():
     os.mkdir(output_volcano_dir)
     output_venn_dir = f"{output_dir}/venn_diagrams"
     os.mkdir(output_venn_dir)
+    output_upset_dir = f"{output_dir}/upset_plots"
+    os.mkdir(output_upset_dir)
 
     # Storing df containning DE, Up and Down regulated genes.
     mutant_regulations_dictionary = {}
@@ -231,9 +233,13 @@ def main():
                     mutant_regulations_dictionary[mut][reg].gene_id
                     )
 
-     # Generate 2 venn's diagrams representing all of the differentially
-     # expressed genes. One will be defalut, the other will be unweight.
-    dgeapy.generate_venn3_diagram(
+    # For the 3 sets of DEG gene IDs:
+    #   - Generate 2 venn's diagrams representing the intersections of
+    #     gene IDs. One will be defalut, the other will be unweight.
+    #   - Generete an upset plot for also representing the intersections
+    #   -  From the intersections represented, generate  a dataframe for each
+    #      containing all of the relevant information and save it to a file.
+    dgeapy.mk_venn_upset_and_intersections_dfs(
             mutant1_gene_set=mut_reg_GeneIdSet_dict[MUTANT_SAMPLES[0]]["DEG"],
             mutant1_name=MUTANT_SAMPLES[0],
             mutant2_gene_set=mut_reg_GeneIdSet_dict[MUTANT_SAMPLES[1]]["DEG"],
@@ -241,22 +247,12 @@ def main():
             mutant3_gene_set=mut_reg_GeneIdSet_dict[MUTANT_SAMPLES[2]]["DEG"],
             mutant3_name=MUTANT_SAMPLES[2],
             plot_formats=PLOT_FORMATS,
-            title="Differentially expressed genes.",
-            path=f"{output_venn_dir}/venn_DEG",
-            )
-    # From the intersections represented in the venn diagram, generate
-    # a dataframe for each containing all of the relevant information
-    # and save it to a file.
-    dgeapy.mk_df_for_each_intersection(
-            mutant1_gene_set=mut_reg_GeneIdSet_dict[MUTANT_SAMPLES[0]]["DEG"],
-            mutant1_name=MUTANT_SAMPLES[0],
-            mutant2_gene_set=mut_reg_GeneIdSet_dict[MUTANT_SAMPLES[1]]["DEG"],
-            mutant2_name=MUTANT_SAMPLES[1],
-            mutant3_gene_set=mut_reg_GeneIdSet_dict[MUTANT_SAMPLES[2]]["DEG"],
-            mutant3_name=MUTANT_SAMPLES[2],
+            plots_title="Differentially expressed genes.",
+            venn_path=f"{output_venn_dir}/venn_DEG",
+            upset_path=f"{output_upset_dir}/upset_DEG",
+            df_path=output_df_dir,
             sub_dfs=mutant_regulations_dictionary,
-            path=output_df_dir,
-            file_names="DEG_interesction"
+            df_filenames="DEG_interesction",
             )
 
     # Both up/down_regulation_labels are dictionaries conaining
@@ -288,9 +284,8 @@ def main():
             file_path=f"{output_venn_dir}/venn_DEG_labels",
             )
 
-     # Generate 2 venn's diagrams representing all of the up regulated
-     # genes. One will be defalut, the other will be unweight.
-    dgeapy.generate_venn3_diagram(
+    # Upregulated sets:
+    dgeapy.mk_venn_upset_and_intersections_dfs(
             mutant1_gene_set=mut_reg_GeneIdSet_dict[MUTANT_SAMPLES[0]]["Up"],
             mutant1_name=MUTANT_SAMPLES[0],
             mutant2_gene_set=mut_reg_GeneIdSet_dict[MUTANT_SAMPLES[1]]["Up"],
@@ -298,24 +293,15 @@ def main():
             mutant3_gene_set=mut_reg_GeneIdSet_dict[MUTANT_SAMPLES[2]]["Up"],
             mutant3_name=MUTANT_SAMPLES[2],
             plot_formats=PLOT_FORMATS,
-            title="Up regulated genes.",
-            path=f"{output_venn_dir}/venn_Up",
-            )
-    # Generating interesction dataframes
-    dgeapy.mk_df_for_each_intersection(
-            mutant1_gene_set=mut_reg_GeneIdSet_dict[MUTANT_SAMPLES[0]]["Up"],
-            mutant1_name=MUTANT_SAMPLES[0],
-            mutant2_gene_set=mut_reg_GeneIdSet_dict[MUTANT_SAMPLES[1]]["Up"],
-            mutant2_name=MUTANT_SAMPLES[1],
-            mutant3_gene_set=mut_reg_GeneIdSet_dict[MUTANT_SAMPLES[2]]["Up"],
-            mutant3_name=MUTANT_SAMPLES[2],
+            plots_title="Upregulated genes.",
+            venn_path=f"{output_venn_dir}/venn_UP",
+            upset_path=f"{output_upset_dir}/upset_UP",
+            df_path=output_df_dir,
             sub_dfs=mutant_regulations_dictionary,
-            path=output_df_dir,
-            file_names="Up_interesction"
+            df_filenames="UP_interesction",
             )
-     # Generate 2 more venn's diagrams representing all of the down regulated
-     # genes. One will be defalut, the other will be unweight.
-    dgeapy.generate_venn3_diagram(
+    # Downregulated sets:
+    dgeapy.mk_venn_upset_and_intersections_dfs(
             mutant1_gene_set=mut_reg_GeneIdSet_dict[MUTANT_SAMPLES[0]]["Down"],
             mutant1_name=MUTANT_SAMPLES[0],
             mutant2_gene_set=mut_reg_GeneIdSet_dict[MUTANT_SAMPLES[1]]["Down"],
@@ -323,20 +309,12 @@ def main():
             mutant3_gene_set=mut_reg_GeneIdSet_dict[MUTANT_SAMPLES[2]]["Down"],
             mutant3_name=MUTANT_SAMPLES[2],
             plot_formats=PLOT_FORMATS,
-            title="Down regulated genes.",
-            path=f"{output_venn_dir}/venn_Down",
-            )
-    # Generating interesction dataframes
-    dgeapy.mk_df_for_each_intersection(
-            mutant1_gene_set=mut_reg_GeneIdSet_dict[MUTANT_SAMPLES[0]]["Down"],
-            mutant1_name=MUTANT_SAMPLES[0],
-            mutant2_gene_set=mut_reg_GeneIdSet_dict[MUTANT_SAMPLES[1]]["Down"],
-            mutant2_name=MUTANT_SAMPLES[1],
-            mutant3_gene_set=mut_reg_GeneIdSet_dict[MUTANT_SAMPLES[2]]["Down"],
-            mutant3_name=MUTANT_SAMPLES[2],
+            plots_title="Downregulated genes.",
+            venn_path=f"{output_venn_dir}/venn_DOWN",
+            upset_path=f"{output_upset_dir}/upset_DOWN",
+            df_path=output_df_dir,
             sub_dfs=mutant_regulations_dictionary,
-            path=output_df_dir,
-            file_names="Down_interesction"
+            df_filenames="DOWN_interesction",
             )
 
     # Comparing sets for the 6 possible inverted regulations combinations.

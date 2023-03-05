@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
-"""3-circle Venn diagram generation functions.
+"""3-circle Venn diagram generation functions. Uses matplotlib and
+matplotlib-venn
 """
 
 import matplotlib.pyplot as plt

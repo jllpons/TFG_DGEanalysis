@@ -9,6 +9,7 @@ import os
 import pandas as pd
 
 from .generate_venn_diagrams import generate_venn3_diagram
+from .generate_upset_plots import generate_upset_plot
 
 #-------# Function Definitions #-----------------------------------------------#
 
@@ -365,6 +366,60 @@ def mk_df_for_each_intersection(
                 f"{path}/{file_names}/{file_names}_{key}.xlsx",
                 index=False
                 )
+
+def mk_venn_upset_and_intersections_dfs(
+        mutant1_gene_set,
+        mutant1_name,
+        mutant2_gene_set,
+        mutant2_name,
+        mutant3_gene_set,
+        mutant3_name,
+        plot_formats,
+        plots_title,
+        venn_path,
+        upset_path,
+        df_path,
+        sub_dfs,
+        df_filenames
+        ):
+    """Takes 3 sets of gene IDs and the respective mutant name and generates
+    the correspoding venn diagrams, upset plots and a dataframe for each
+    one of the 7 intersections.
+    """
+
+    generate_venn3_diagram(
+        mutant1_gene_set,
+        mutant1_name,
+        mutant2_gene_set,
+        mutant2_name,
+        mutant3_gene_set,
+        mutant3_name,
+        plot_formats,
+        plots_title,
+        venn_path,
+        )
+    generate_upset_plot(
+        mutant1_gene_set,
+        mutant1_name,
+        mutant2_gene_set,
+        mutant2_name,
+        mutant3_gene_set,
+        mutant3_name,
+        plot_formats,
+        plots_title,
+        upset_path,
+        )
+    mk_df_for_each_intersection(
+        mutant1_gene_set,
+        mutant1_name,
+        mutant2_gene_set,
+        mutant2_name,
+        mutant3_gene_set,
+        mutant3_name,
+        sub_dfs,
+        df_path,
+        df_filenames,
+        )
 
 
 def get_inverted_regulations_and_mk_venns_and_dataframes(

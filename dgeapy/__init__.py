@@ -12,8 +12,10 @@ from dgeapy.filter_dataframe import column_names_to_check
 from dgeapy.filter_dataframe import filter_FC_PVALUE_PADJ
 from dgeapy.filter_dataframe import get_gene_ids_set_for_intersections
 from dgeapy.filter_dataframe import mk_df_for_each_intersection
+from dgeapy.filter_dataframe import mk_venn_upset_and_intersections_dfs
 from dgeapy.filter_dataframe import get_inverted_regulations_and_mk_venns_and_dataframes
 from dgeapy.generate_plots import generate_volcano_plot
 from dgeapy.generate_venn_diagrams import generate_venn3_diagram
 from dgeapy.generate_venn_diagrams import generate_venn3_diagram_with_regulation_labels
+from dgeapy.generate_upset_plots import generate_upset_plot
 
