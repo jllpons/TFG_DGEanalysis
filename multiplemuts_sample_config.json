@@ -1,20 +1,5 @@
 {
-    "dataframe_file_name": "path/to/df.csv",
-    "fold_change_threshold": 1.5,
-    "p_value_threshold": 0.05,
-    "padj_threshold": 0.05,
-    "wild_type_sample": "K12",
-    "mutant_samples": [
-        "geneA",
-        "geneB",
-        "geneC"
-    ],
-    "plot_formats": [
-        "pdf",
-        "jpg",
-        "svg"
-    ],
-    "df_to_merge": {
-        "geneA": "path/to/df_to_merge.csv"
-    }
+    "mutA": "path/to/mutA.tsv",
+    "mutB": "path/to/mutB.tsv",
+    "mutC": "path/to/mutC.tsv"
 }

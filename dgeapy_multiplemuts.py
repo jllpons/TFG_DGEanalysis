@@ -15,8 +15,8 @@ import dgeapy
 
 def main():
 
-    description = "Differential Gene Expression data analysis from dataframes"\
-                  " containing 3 mutant vs. wild type experiments."
+    description = "Differential Gene Expression data analysis from multiple " \
+                  "dataframes containing mutant vs. wild type experiments."
 
     parser = argparse.ArgumentParser(
                         description=description,
@@ -32,6 +32,35 @@ def main():
             help="path to JSON configuration file",
             )
     parser.add_argument(
+            "--pvalue",
+            nargs=1,
+            default=0.05,
+            type=float,
+            help="p-value threshold, default is 0.05",
+            )
+    parser.add_argument(
+            "--padj",
+            nargs=1,
+            default=0.05,
+            type=float,
+            help="adjusted p-value threshold, default is 0.05",
+            )
+    parser.add_argument(
+            "--fc",
+            nargs=1,
+            default=2.00,
+            type=float,
+            help="fold change threshold, default is 2.00",
+            )
+    parser.add_argument(
+            "--formats",
+            nargs="?",
+            default=["png"],
+            type=str,
+            action="append",
+            help="plot formats, defalut is png",
+            )
+    parser.add_argument(
             "-g",
             action='store_true',
             default=False,
@@ -42,7 +71,7 @@ def main():
 
     if not args.configuration_json_file:
         parser.print_help()
-        sys.exit("\n ** The JSON configuration file is required **")
+        sys.exit("\n ** The JSON configuration file is required **\n")
 
     config_file = os.path.abspath(args.configuration_json_file)
     if not os.path.isfile(config_file):
@@ -52,55 +81,20 @@ def main():
     # TODO: make the funcntion work even if the JSON file has invalid syntax.
     config_dictionary = dgeapy.read_config_json_file(config_file)
 
-    DF_FILE_PATH = config_dictionary["dataframe_file_path"]
-    if not os.path.isfile(DF_FILE_PATH):
-        raise FileNotFoundError(f"Could not find file: {DF_FILE_PATH}")
-
-    FOLD_CHANGE_THRESHOLD = config_dictionary["fold_change_threshold"]
-    P_VALUE_THRESHOLD = config_dictionary["p_value_threshold"]
-    PADJ_THRESHOLD = config_dictionary["padj_threshold"]
-    WILD_TYPE_SAMPLE = config_dictionary["wild_type_sample"]
-    MUTANT_SAMPLES = config_dictionary["mutant_samples"]
-    PLOT_FORMATS = config_dictionary["plot_formats"]
-    try:
-        DF_TO_MERGE = {}
-
-        for k in config_dictionary["df_to_merge"]:
-            DF_TO_MERGE[k] = config_dictionary["df_to_merge"][k]
-
-            if not os.path.isfile(DF_TO_MERGE[k]):
-                raise FileNotFoundError(f"Could not find file: {DF_TO_MERGE[k]}")
-    except:
-        DF_TO_MERGE = None
-
+    FOLD_CHANGE_THRESHOLD = args.fc
+    P_VALUE_THRESHOLD = args.pvalue
+    PADJ_THRESHOLD = args.padj
+    PLOT_FORMATS = args.formats
+    MUTANTS = list(config_dictionary.keys())
+    DATAFRAMES = config_dictionary
     include_novels = args.g
 
-    df = pd.read_csv(
-                DF_FILE_PATH,
-                sep="\t",
-                na_values=["--", "",]
-                )
-
-    # sub_dfs is a dictionary that contains one dataframe for each mutant.
-    # Each df contains only the data related to that mutant.
-    sub_dfs = dgeapy.generate_sub_dataframes_3muts(
-                        dataframe=df,
-                        mutants_list=MUTANT_SAMPLES,
-                        )
-
-    # Changing df for the ones to merge
-    if DF_TO_MERGE is not None:
-        for k in DF_TO_MERGE:
-            sub_dfs[k] = pd.read_csv(
-                                DF_TO_MERGE[k],
-                                sep="\t",
-                                na_values=["--", "",]
-                                )
-
-
+    for mut in MUTANTS:
+        if not os.path.isfile(DATAFRAMES[mut]):
+                raise FileNotFoundError(f"Could not find file: {DATAFRAMES[mut]}")
 
     cwd = os.getcwd()
-    output_dir = f"{cwd}/dgeapy_output_{WILD_TYPE_SAMPLE}"
+    output_dir = f"{cwd}/dgeapy_output"
 
     # Crate a directory for the output. If already exists, add _n to the name.
     output_dir_accumulator = 1
@@ -122,16 +116,22 @@ def main():
     os.mkdir(output_venn_dir)
     output_upset_dir = f"{output_dir}/upset_plots"
     os.mkdir(output_upset_dir)
+    output_sankey_dir = f"{output_dir}/sankey_diagrams"
+    os.mkdir(output_sankey_dir)
 
     # Storing df containning DE, Up and Down regulated genes.
     mutant_regulations_dictionary = {}
 
-    for mutant in MUTANT_SAMPLES:
+    for mutant in MUTANTS:
 
         mutant_df_dir = f"{output_df_dir}/{mutant}"
         os.mkdir(mutant_df_dir)
 
-        mutant_df = sub_dfs[mutant]
+        mutant_df = pd.read_csv(
+                            DATAFRAMES[mutant],
+                            sep="\t",
+                            na_values=["--", "",]
+                            )
 
         dgeapy.add_fold_change_columns(mutant_df)
         dgeapy.add_regulation_columns(mutant_df)
@@ -156,12 +156,12 @@ def main():
                                 )
 
         # Up and Down regulated genes from DEG
-        mutant_df_up = mutant_df_deg[
-                            mutant_df_deg[f"{mutant}vsWT_Regulation"] == "Up"
-                            ]
-        mutant_df_down = mutant_df_deg[
-                            mutant_df_deg[f"{mutant}vsWT_Regulation"] == "Down"
-                            ]
+        mutant_df_up = mutant_df_deg[mutant_df_deg[
+                                        column_names_to_check["Regulation"]
+                                                    ] == "Up"]
+        mutant_df_down = mutant_df_deg[mutant_df_deg[
+                                        column_names_to_check["Regulation"]
+                                                    ] == "Down"]
 
         # Adding dfs of  DE, Up and Down regulated genes
         mutant_regulations_dictionary[mutant] = {
@@ -181,32 +181,32 @@ def main():
                     index=False,
                     )
         mutant_df_deg.to_csv(
-                            f"{mutant_df_dir}/{mutant}_DEG.tsv",
-                            sep="\t",
-                            index=False,
-                            )
+                        f"{mutant_df_dir}/{mutant}_DEG.tsv",
+                        sep="\t",
+                        index=False,
+                        )
         mutant_df_deg.to_excel(
-                            f"{mutant_df_dir}/{mutant}_DEG.xlsx",
-                            index=False,
-                            )
+                        f"{mutant_df_dir}/{mutant}_DEG.xlsx",
+                        index=False,
+                        )
         mutant_df_up.to_csv(
-                            f"{mutant_df_dir}/{mutant}_UP.tsv",
-                            sep="\t",
-                            index=False,
-                            )
+                        f"{mutant_df_dir}/{mutant}_UP.tsv",
+                        sep="\t",
+                        index=False,
+                        )
         mutant_df_up.to_excel(
-                            f"{mutant_df_dir}/{mutant}_UP.xlsx",
-                            index=False,
-                            )
+                        f"{mutant_df_dir}/{mutant}_UP.xlsx",
+                        index=False,
+                        )
         mutant_df_down.to_csv(
-                            f"{mutant_df_dir}/{mutant}_DOWN.tsv",
-                            sep="\t",
-                            index=False,
-                            )
+                        f"{mutant_df_dir}/{mutant}_DOWN.tsv",
+                        sep="\t",
+                        index=False,
+                        )
         mutant_df_down.to_excel(
-                            f"{mutant_df_dir}/{mutant}_DOWN.xlsx",
-                            index=False,
-                            )
+                        f"{mutant_df_dir}/{mutant}_DOWN.xlsx",
+                        index=False,
+                        )
 
         # Generate a volcano and a count plots
         dgeapy.generate_volcano_plot(
@@ -225,7 +225,7 @@ def main():
     mut_reg_GeneIdSet_dict = {}
     for mut in mutant_regulations_dictionary:
 
-        mut_reg_GeneIdSet_dict[mut] = {"DEG" : "", "Up" : "", "Down" : ""}
+        mut_reg_GeneIdSet_dict[mut] = {}
 
         for reg in mutant_regulations_dictionary[mut]:
 
@@ -237,15 +237,15 @@ def main():
     #   - Generate 2 venn's diagrams representing the intersections of
     #     gene IDs. One will be defalut, the other will be unweight.
     #   - Generete an upset plot for also representing the intersections
-    #   -  From the intersections represented, generate  a dataframe for each
-    #      containing all of the relevant information and save it to a file.
+    #   - From the intersections represented, generate  a dataframe for each
+    #     containing all of the relevant information and save it to a file.
     dgeapy.mk_venn_upset_and_intersections_dfs(
-            mutant1_gene_set=mut_reg_GeneIdSet_dict[MUTANT_SAMPLES[0]]["DEG"],
-            mutant1_name=MUTANT_SAMPLES[0],
-            mutant2_gene_set=mut_reg_GeneIdSet_dict[MUTANT_SAMPLES[1]]["DEG"],
-            mutant2_name=MUTANT_SAMPLES[1],
-            mutant3_gene_set=mut_reg_GeneIdSet_dict[MUTANT_SAMPLES[2]]["DEG"],
-            mutant3_name=MUTANT_SAMPLES[2],
+            mutant1_gene_set=mut_reg_GeneIdSet_dict[MUTANTS[0]]["DEG"],
+            mutant1_name=MUTANTS[0],
+            mutant2_gene_set=mut_reg_GeneIdSet_dict[MUTANTS[1]]["DEG"],
+            mutant2_name=MUTANTS[1],
+            mutant3_gene_set=mut_reg_GeneIdSet_dict[MUTANTS[2]]["DEG"],
+            mutant3_name=MUTANTS[2],
             plot_formats=PLOT_FORMATS,
             plots_title="Differentially expressed genes.",
             venn_path=f"{output_venn_dir}/venn_DEG",
@@ -260,23 +260,23 @@ def main():
     # They'll display the actual number of genes considered
     # up and down regulated at the same time.
     up_regulation_labels = dgeapy.get_gene_ids_set_for_intersections(
-            set1=mut_reg_GeneIdSet_dict[MUTANT_SAMPLES[0]]["Up"],
-            set2=mut_reg_GeneIdSet_dict[MUTANT_SAMPLES[1]]["Up"],
-            set3=mut_reg_GeneIdSet_dict[MUTANT_SAMPLES[2]]["Up"],
+            set1=mut_reg_GeneIdSet_dict[MUTANTS[0]]["Up"],
+            set2=mut_reg_GeneIdSet_dict[MUTANTS[1]]["Up"],
+            set3=mut_reg_GeneIdSet_dict[MUTANTS[2]]["Up"],
             )
     down_regulation_labels = dgeapy.get_gene_ids_set_for_intersections(
-            set1=mut_reg_GeneIdSet_dict[MUTANT_SAMPLES[0]]["Down"],
-            set2=mut_reg_GeneIdSet_dict[MUTANT_SAMPLES[1]]["Down"],
-            set3=mut_reg_GeneIdSet_dict[MUTANT_SAMPLES[2]]["Down"],
+            set1=mut_reg_GeneIdSet_dict[MUTANTS[0]]["Down"],
+            set2=mut_reg_GeneIdSet_dict[MUTANTS[1]]["Down"],
+            set3=mut_reg_GeneIdSet_dict[MUTANTS[2]]["Down"],
             )
     # Generate the same two diagrams but with the labels
     dgeapy.generate_venn3_diagram_with_regulation_labels(
-            mutant1_gene_set=mut_reg_GeneIdSet_dict[MUTANT_SAMPLES[0]]["DEG"],
-            mutant1_name=MUTANT_SAMPLES[0],
-            mutant2_gene_set=mut_reg_GeneIdSet_dict[MUTANT_SAMPLES[1]]["DEG"],
-            mutant2_name=MUTANT_SAMPLES[1],
-            mutant3_gene_set=mut_reg_GeneIdSet_dict[MUTANT_SAMPLES[2]]["DEG"],
-            mutant3_name=MUTANT_SAMPLES[2],
+            mutant1_gene_set=mut_reg_GeneIdSet_dict[MUTANTS[0]]["DEG"],
+            mutant1_name=MUTANTS[0],
+            mutant2_gene_set=mut_reg_GeneIdSet_dict[MUTANTS[1]]["DEG"],
+            mutant2_name=MUTANTS[1],
+            mutant3_gene_set=mut_reg_GeneIdSet_dict[MUTANTS[2]]["DEG"],
+            mutant3_name=MUTANTS[2],
             plot_formats=PLOT_FORMATS,
             up_regulation_labels=up_regulation_labels,
             down_regulation_labels=down_regulation_labels,
@@ -286,12 +286,12 @@ def main():
 
     # Upregulated sets:
     dgeapy.mk_venn_upset_and_intersections_dfs(
-            mutant1_gene_set=mut_reg_GeneIdSet_dict[MUTANT_SAMPLES[0]]["Up"],
-            mutant1_name=MUTANT_SAMPLES[0],
-            mutant2_gene_set=mut_reg_GeneIdSet_dict[MUTANT_SAMPLES[1]]["Up"],
-            mutant2_name=MUTANT_SAMPLES[1],
-            mutant3_gene_set=mut_reg_GeneIdSet_dict[MUTANT_SAMPLES[2]]["Up"],
-            mutant3_name=MUTANT_SAMPLES[2],
+            mutant1_gene_set=mut_reg_GeneIdSet_dict[MUTANTS[0]]["Up"],
+            mutant1_name=MUTANTS[0],
+            mutant2_gene_set=mut_reg_GeneIdSet_dict[MUTANTS[1]]["Up"],
+            mutant2_name=MUTANTS[1],
+            mutant3_gene_set=mut_reg_GeneIdSet_dict[MUTANTS[2]]["Up"],
+            mutant3_name=MUTANTS[2],
             plot_formats=PLOT_FORMATS,
             plots_title="Upregulated genes.",
             venn_path=f"{output_venn_dir}/venn_UP",
@@ -302,12 +302,12 @@ def main():
             )
     # Downregulated sets:
     dgeapy.mk_venn_upset_and_intersections_dfs(
-            mutant1_gene_set=mut_reg_GeneIdSet_dict[MUTANT_SAMPLES[0]]["Down"],
-            mutant1_name=MUTANT_SAMPLES[0],
-            mutant2_gene_set=mut_reg_GeneIdSet_dict[MUTANT_SAMPLES[1]]["Down"],
-            mutant2_name=MUTANT_SAMPLES[1],
-            mutant3_gene_set=mut_reg_GeneIdSet_dict[MUTANT_SAMPLES[2]]["Down"],
-            mutant3_name=MUTANT_SAMPLES[2],
+            mutant1_gene_set=mut_reg_GeneIdSet_dict[MUTANTS[0]]["Down"],
+            mutant1_name=MUTANTS[0],
+            mutant2_gene_set=mut_reg_GeneIdSet_dict[MUTANTS[1]]["Down"],
+            mutant2_name=MUTANTS[1],
+            mutant3_gene_set=mut_reg_GeneIdSet_dict[MUTANTS[2]]["Down"],
+            mutant3_name=MUTANTS[2],
             plot_formats=PLOT_FORMATS,
             plots_title="Downregulated genes.",
             venn_path=f"{output_venn_dir}/venn_DOWN",
@@ -324,7 +324,7 @@ def main():
     os.mkdir(inverted_reg_dir)
     dgeapy.get_inverted_regulations_and_mk_venns_and_dataframes(
             sets_dictionary=mut_reg_GeneIdSet_dict,
-            mutants=MUTANT_SAMPLES,
+            mutants=MUTANTS,
             sub_dfs=mutant_regulations_dictionary,
             plot_formats=PLOT_FORMATS,
             venn_directory_path=inverted_reg_dir,

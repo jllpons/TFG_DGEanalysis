@@ -83,17 +83,19 @@ def column_names_to_check(dataframe):
     # For each name in the column names list.
     for name in column_names:
         # If if contains "_FoldChange" add it to the columns_to_check list.
-        if "_FoldChange" in name:
-            column_names_to_check["FoldChange"] = name
-        # Same for the log2 Fold Change Column
-        elif "_log2FoldChange" in name:
+        if "log2FoldChange" in name:
             column_names_to_check["log2FoldChange"] = name
+        # Same for the log2 Fold Change Column
+        elif "FoldChange" in name:
+            column_names_to_check["FoldChange"] = name
         # Same for "pvalue".
         elif "pvalue" in name:
             column_names_to_check["pvalue"] = name
         # Also same for the "padj".
         elif "padj" in name:
             column_names_to_check["padj"] = name
+        elif "Regulation" in name:
+            column_names_to_check["Regulation"] = name
 
     return column_names_to_check
 
@@ -169,7 +171,7 @@ def get_gene_ids_set_for_intersections(
     return intersections_dict
 
 
-def sort_df(df):
+def sort_df(df, mutant_names):
     """Takes a df generated in mk_df_for_each_intersection() and sorts the
     columns. Rows are sorted taking the first foldchange column values.
     """
@@ -189,29 +191,29 @@ def sort_df(df):
     for i in column_names:
         if "gene_id" in i:
             gene_id.append(i)
-        elif "_log2FoldChange" in i:
+        elif "log2FoldChange" in i:
             log2FC.append(i)
-        elif "_FoldChange" in i:
+        elif "FoldChange" in i:
             fc.append(i)
-        elif "_Regulation" in i:
+        elif "Regulation" in i:
             regulation.append(i)
-        elif "_pvalue" in i:
+        elif "pvalue" in i:
             pvalue.append(i)
-        elif "_padj"in i:
+        elif "padj"in i:
             padj.append(i)
-        elif "_chr" in i:
+        elif "chr" in i:
             gene_info.append(i)
-        elif "_start"in i:
+        elif "start"in i:
             gene_info.append(i)
-        elif "_end" in i:
+        elif "end" in i:
             gene_info.append(i)
-        elif "_strand" in i:
+        elif "strand" in i:
             gene_info.append(i)
-        elif "_length" in i:
+        elif "length" in i:
             gene_info.append(i)
-        elif "_biotype" in i:
+        elif "biotype" in i:
             gene_info.append(i)
-        elif "_description" in i:
+        elif "description" in i:
             gene_info.append(i)
         elif "tf_family" in i:
             gene_info.append(i)
@@ -229,12 +231,16 @@ def sort_df(df):
             )
 
     df = df[new_colums_names]
-    df = df.sort_values(
-                fc[0],
-                ascending=False,
-                )
+    try:
+        df = df.sort_values(
+                    fc[0],
+                    ascending=False,
+                    )
 
-    return df
+        return df
+
+    except:
+        return df
 
 
 def mk_df_for_each_intersection(
@@ -264,54 +270,46 @@ def mk_df_for_each_intersection(
             )
 
     # Columns that the generated dataframes will contain.
-    mutant1_df = sub_dfs[mutant1_name]["DEG"][[
-        "gene_id",
-        f"{mutant1_name}vsWT_log2FoldChange",
-        f"{mutant1_name}vsWT_FoldChange",
-        f"{mutant1_name}vsWT_Regulation",
-        f"{mutant1_name}vsWT_pvalue",
-        f"{mutant1_name}vsWT_padj",
-        "gene_chr",
-        "gene_start",
-        "gene_end",
-        "gene_strand",
-        "gene_length",
-        "gene_biotype",
-        "gene_description",
-        "tf_family",
-        ]]
-    mutant2_df = sub_dfs[mutant2_name]["DEG"][[
-        "gene_id",
-        f"{mutant2_name}vsWT_log2FoldChange",
-        f"{mutant2_name}vsWT_FoldChange",
-        f"{mutant2_name}vsWT_Regulation",
-        f"{mutant2_name}vsWT_pvalue",
-        f"{mutant2_name}vsWT_padj",
-        "gene_chr",
-        "gene_start",
-        "gene_end",
-        "gene_strand",
-        "gene_length",
-        "gene_biotype",
-        "gene_description",
-        "tf_family",
-        ]]
-    mutant3_df = sub_dfs[mutant3_name]["DEG"][[
-        "gene_id",
-        f"{mutant3_name}vsWT_log2FoldChange",
-        f"{mutant3_name}vsWT_FoldChange",
-        f"{mutant3_name}vsWT_Regulation",
-        f"{mutant3_name}vsWT_pvalue",
-        f"{mutant3_name}vsWT_padj",
-        "gene_chr",
-        "gene_start",
-        "gene_end",
-        "gene_strand",
-        "gene_length",
-        "gene_biotype",
-        "gene_description",
-        "tf_family",
-        ]]
+    columns = [
+            "gene_id",
+            "log2FoldChange",
+            "FoldChange",
+            "Regulation",
+            "pvalue",
+            "padj",
+            "gene_chr",
+            "gene_start",
+            "gene_end",
+            "gene_strand",
+            "gene_length",
+            "gene_biotype",
+            "gene_description",
+            "tf_family",
+            ]
+    mutant1_df = sub_dfs[mutant1_name]["DEG"][columns]
+    mutant1_df = mutant1_df.rename(columns={
+                    "log2FoldChange" : f"{mutant1_name}_log2FoldChange",
+                    "FoldChange" : f"{mutant1_name}_FoldChange",
+                    "padj" : f"{mutant1_name}_padj",
+                    "pvalue" : f"{mutant1_name}_pvalue",
+                    "Regulation" : f"{mutant1_name}_Regulation",
+                    })
+    mutant2_df = sub_dfs[mutant2_name]["DEG"][columns]
+    mutant2_df = mutant2_df.rename(columns={
+                    "log2FoldChange" : f"{mutant2_name}_log2FoldChange",
+                    "FoldChange" : f"{mutant2_name}_FoldCange",
+                    "padj" : f"{mutant2_name}_padj",
+                    "pvalue" : f"{mutant2_name}_pvalue",
+                    "Regulation" : f"{mutant2_name}_Regulation",
+                    })
+    mutant3_df = sub_dfs[mutant3_name]["DEG"][columns]
+    mutant3_df = mutant3_df.rename(columns={
+                    "log2FoldChange" : f"{mutant3_name}_log2FoldChange",
+                    "FoldChange" : f"{mutant3_name}_FoldCange",
+                    "padj" : f"{mutant3_name}_padj",
+                    "pvalue" : f"{mutant3_name}_pvalue",
+                    "Regulation" : f"{mutant3_name}_Regulation",
+                    })
 
     # For each one of the intersections
     for key in intersections_dict:
@@ -355,7 +353,7 @@ def mk_df_for_each_intersection(
                     )
 
         # We sort the columns for a cleaner visualization
-        df = sort_df(df)
+        df = sort_df(df, (mutant1_name, mutant2_name, mutant3_name))
 
         df.to_csv(
                 f"{path}/{file_names}/{file_names}_{key}.tsv",

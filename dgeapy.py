@@ -37,8 +37,8 @@ usage: dgeapy.py <command> [options]
             print(description)
 
         elif cmd == "multiplemuts":
-            subcmd = ["python3", "dgeapy_multiplemuts.py",] + sys.argv[2:]
-            subprocess.call(subcmd)
+            subcmd = ["python", "dgeapy_multiplemuts.py",] + sys.argv[2:]
+            subprocess.run(subcmd)
 
         elif cmd == "mkconfigs":
             mkconfigs()
