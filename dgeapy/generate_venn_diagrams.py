@@ -55,8 +55,7 @@ def generate_venn3_diagram(
                     transparent=True
                     )
 
-    # Clears current figure
-    plt.clf()
+    plt.close()
 
 
 def generate_venn3_diagram_with_regulation_labels(
@@ -172,7 +171,7 @@ def generate_venn3_diagram_with_regulation_labels(
                     )
 
     # Clears current figure
-    plt.clf()
+    plt.close()
 
     venn_unw = venn3_unweighted(set_array, set_names)
     venn_unw.get_label_by_id('100').set_text(label_100)
@@ -195,6 +194,5 @@ def generate_venn3_diagram_with_regulation_labels(
                     transparent=True
                     )
 
-    # Clears current figure
-    plt.clf()
+    plt.close()
 

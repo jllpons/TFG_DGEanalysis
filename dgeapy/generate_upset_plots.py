@@ -49,6 +49,5 @@ def generate_upset_plot(
                     transparent=True
                     )
 
-    # Clears current figure
-    plt.clf()
+    plt.close()
 

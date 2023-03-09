@@ -128,6 +128,8 @@ def generate_sankey_diagram(
                 for format in plot_formats:
                     plt.savefig(f"{path}{m}vs{n}sankey.{format}", dpi=300)
 
+                plt.close()
+
 
 
 

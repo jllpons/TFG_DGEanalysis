@@ -58,8 +58,7 @@ def generate_regulation_countplot(
             plot_name = f"{file_path}_regulation-stats_transparent-bg.{format}"
             fig.savefig(plot_name, format=format, dpi=300, transparent=True)
 
-    # Clear current figure
-    plt.clf()
+    plt.close()
 
 
 def generate_volcano_plot(
@@ -206,5 +205,5 @@ def generate_volcano_plot(
             plot_name = f"{file_path}_volcano_transparent-bg.{format}"
             fig.savefig(plot_name, format=format, dpi=300, transparent=True)
 
-    plt.clf()
+    plt.close()
 
