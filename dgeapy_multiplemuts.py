@@ -251,13 +251,13 @@ def main(args=None):
     if len(data) == 3:
         up_regulation_labels = dgeapy.get_gene_ids_set_for_intersections(
                 set1=set(data[0].up_df.index),
-                set2=set(data[0].up_df.index),
-                set3=set(data[0].up_df.index),
+                set2=set(data[1].up_df.index),
+                set3=set(data[2].up_df.index),
                 )
         down_regulation_labels = dgeapy.get_gene_ids_set_for_intersections(
                 set1=set(data[0].up_df.index),
-                set2=set(data[0].up_df.index),
-                set3=set(data[0].up_df.index),
+                set2=set(data[1].up_df.index),
+                set3=set(data[2].up_df.index),
                 )
         # Generate the same two diagrams but with the labels
         dgeapy.generate_venn3_diagram_with_regulation_labels(
