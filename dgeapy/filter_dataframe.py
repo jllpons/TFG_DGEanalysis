@@ -8,8 +8,8 @@ import os
 
 import pandas as pd
 
-from .generate_venn_diagrams import generate_venn3_diagram
-from .generate_upset_plots import generate_upset_plot
+from .venn_diagrams import generate_venn3_diagram
+from .upset_plots import generate_upset_plot
 
 #-------# Function Definitions #-----------------------------------------------#
 
@@ -243,14 +243,14 @@ def sort_df(df, mutant_names):
         return df
 
 
-def mk_df_for_each_intersection(
+def mk_df_for_each_intersection3(
         mutant1_gene_set,
         mutant1_name,
         mutant2_gene_set,
         mutant2_name,
         mutant3_gene_set,
         mutant3_name,
-        sub_dfs,
+        data,
         path,
         file_names,
         ):
@@ -271,7 +271,6 @@ def mk_df_for_each_intersection(
 
     # Columns that the generated dataframes will contain.
     columns = [
-            "gene_id",
             "log2FoldChange",
             "FoldChange",
             "Regulation",
@@ -286,7 +285,7 @@ def mk_df_for_each_intersection(
             "gene_description",
             "tf_family",
             ]
-    mutant1_df = sub_dfs[mutant1_name]["DEG"][columns]
+    mutant1_df = data[0].dge_df[columns]
     mutant1_df = mutant1_df.rename(columns={
                     "log2FoldChange" : f"{mutant1_name}_log2FoldChange",
                     "FoldChange" : f"{mutant1_name}_FoldChange",
@@ -294,7 +293,7 @@ def mk_df_for_each_intersection(
                     "pvalue" : f"{mutant1_name}_pvalue",
                     "Regulation" : f"{mutant1_name}_Regulation",
                     })
-    mutant2_df = sub_dfs[mutant2_name]["DEG"][columns]
+    mutant2_df = data[1].dge_df[columns]
     mutant2_df = mutant2_df.rename(columns={
                     "log2FoldChange" : f"{mutant2_name}_log2FoldChange",
                     "FoldChange" : f"{mutant2_name}_FoldCange",
@@ -302,7 +301,7 @@ def mk_df_for_each_intersection(
                     "pvalue" : f"{mutant2_name}_pvalue",
                     "Regulation" : f"{mutant2_name}_Regulation",
                     })
-    mutant3_df = sub_dfs[mutant3_name]["DEG"][columns]
+    mutant3_df = data[2].dge_df[columns]
     mutant3_df = mutant3_df.rename(columns={
                     "log2FoldChange" : f"{mutant3_name}_log2FoldChange",
                     "FoldChange" : f"{mutant3_name}_FoldCange",
@@ -317,7 +316,7 @@ def mk_df_for_each_intersection(
         # Making a dataframe containing only the gene IDs presents
         # In that intersection. Also setting the gene IDs as index.
         df = pd.DataFrame(data={"gene_id" : list(intersections_dict[key])})
-        df.set_index("gene_id")
+        df = df.set_index("gene_id")
 
         # If first bit is 1, there're gene IDs from the 1st mutant DE genes
         # that are present in that intersection. So we take the
@@ -325,7 +324,6 @@ def mk_df_for_each_intersection(
         # showed above for ONLY the gene IDs that are already present
         # in the previosly created df.
         if key[0] == str(1):
-            mutant1_df.set_index("gene_id")
             df = pd.merge(
                     df,
                     mutant1_df,
@@ -335,7 +333,6 @@ def mk_df_for_each_intersection(
         # The second bit being 1 means there're gene IDs form the 2nd mutant
         # DE genes present in that intersection. We do the same as above.
         if key[1] == str(1):
-            mutant2_df.set_index("gene_id")
             df= pd.merge(
                     df,
                     mutant2_df,
@@ -345,7 +342,6 @@ def mk_df_for_each_intersection(
         # The third bit being 1 means there're gene IDs form the 3rd mutant
         # DE genes present in that intersection. We do the same as before.
         if key[2] == str(1):
-            mutant3_df.set_index("gene_id")
             df = pd.merge(
                     df,
                     mutant3_df,
@@ -357,75 +353,137 @@ def mk_df_for_each_intersection(
 
         df.to_csv(
                 f"{path}/{file_names}/{file_names}_{key}.tsv",
-                index=False,
                 )
 
         df.to_excel(
                 f"{path}/{file_names}/{file_names}_{key}.xlsx",
-                index=False
                 )
 
 def mk_venn_upset_and_intersections_dfs(
-        mutant1_gene_set,
-        mutant1_name,
-        mutant2_gene_set,
-        mutant2_name,
-        mutant3_gene_set,
-        mutant3_name,
+        data,
         plot_formats,
-        plots_title,
         venn_path,
         upset_path,
         df_path,
-        sub_dfs,
-        df_filenames
         ):
     """Takes 3 sets of gene IDs and the respective mutant name and generates
     the correspoding venn diagrams, upset plots and a dataframe for each
     one of the 7 intersections.
     """
 
-    generate_venn3_diagram(
-        mutant1_gene_set,
-        mutant1_name,
-        mutant2_gene_set,
-        mutant2_name,
-        mutant3_gene_set,
-        mutant3_name,
-        plot_formats,
-        plots_title,
-        venn_path,
-        )
-    generate_upset_plot(
-        mutant1_gene_set,
-        mutant1_name,
-        mutant2_gene_set,
-        mutant2_name,
-        mutant3_gene_set,
-        mutant3_name,
-        plot_formats,
-        plots_title,
-        upset_path,
-        )
-    mk_df_for_each_intersection(
-        mutant1_gene_set,
-        mutant1_name,
-        mutant2_gene_set,
-        mutant2_name,
-        mutant3_gene_set,
-        mutant3_name,
-        sub_dfs,
-        df_path,
-        df_filenames,
-        )
+    if len(data) == 3:
+
+        # Differentially expressed genes
+        generate_venn3_diagram(
+                mutant1_gene_set=set(data[0].dge_df.index),
+                mutant1_name=data[0].name,
+                mutant2_gene_set=set(data[1].dge_df.index),
+                mutant2_name=data[1].name,
+                mutant3_gene_set=set(data[2].dge_df.index),
+                mutant3_name=data[2].name,
+                plot_formats=plot_formats,
+                title='Differentially expressed genes',
+                path=f'{venn_path}/venn_DEG',
+                )
+        generate_upset_plot(
+                mutant1_gene_set=set(data[0].dge_df.index),
+                mutant1_name=data[0].name,
+                mutant2_gene_set=set(data[1].dge_df.index),
+                mutant2_name=data[1].name,
+                mutant3_gene_set=set(data[2].dge_df.index),
+                mutant3_name=data[2].name,
+                plot_formats=plot_formats,
+                title='Differentially expressed genes',
+                path=f'{upset_path}/UpSet_DEG'
+                )
+        mk_df_for_each_intersection3(
+                mutant1_gene_set=set(data[0].dge_df.index),
+                mutant1_name=data[0].name,
+                mutant2_gene_set=set(data[1].dge_df.index),
+                mutant2_name=data[1].name,
+                mutant3_gene_set=set(data[2].dge_df.index),
+                mutant3_name=data[2].name,
+                data=data,
+                path=df_path,
+                file_names='DEG_intersection',
+                )
+
+        # Upregulated genes
+        generate_venn3_diagram(
+                mutant1_gene_set=set(data[0].up_df.index),
+                mutant1_name=data[0].name,
+                mutant2_gene_set=set(data[1].up_df.index),
+                mutant2_name=data[1].name,
+                mutant3_gene_set=set(data[2].up_df.index),
+                mutant3_name=data[2].name,
+                plot_formats=plot_formats,
+                title='Upregulated genes',
+                path=f'{venn_path}/venn_UP',
+                )
+        generate_upset_plot(
+                mutant1_gene_set=set(data[0].up_df.index),
+                mutant1_name=data[0].name,
+                mutant2_gene_set=set(data[1].up_df.index),
+                mutant2_name=data[1].name,
+                mutant3_gene_set=set(data[2].up_df.index),
+                mutant3_name=data[2].name,
+                plot_formats=plot_formats,
+                title='Upregulated genes',
+                path=f'{upset_path}/UpSet_UP'
+                )
+        mk_df_for_each_intersection3(
+                mutant1_gene_set=set(data[0].up_df.index),
+                mutant1_name=data[0].name,
+                mutant2_gene_set=set(data[1].up_df.index),
+                mutant2_name=data[1].name,
+                mutant3_gene_set=set(data[2].up_df.index),
+                mutant3_name=data[2].name,
+                data=data,
+                path=df_path,
+                file_names='UP_intersection',
+                )
+
+        # Downregulated genes
+        generate_venn3_diagram(
+                mutant1_gene_set=set(data[0].down_df.index),
+                mutant1_name=data[0].name,
+                mutant2_gene_set=set(data[1].down_df.index),
+                mutant2_name=data[1].name,
+                mutant3_gene_set=set(data[2].down_df.index),
+                mutant3_name=data[2].name,
+                plot_formats=plot_formats,
+                title='Downregulated genes',
+                path=f'{venn_path}/venn_DOWN',
+                )
+        generate_upset_plot(
+                mutant1_gene_set=set(data[0].down_df.index),
+                mutant1_name=data[0].name,
+                mutant2_gene_set=set(data[1].down_df.index),
+                mutant2_name=data[1].name,
+                mutant3_gene_set=set(data[2].down_df.index),
+                mutant3_name=data[2].name,
+                plot_formats=plot_formats,
+                title='Downregulated genes',
+                path=f'{upset_path}/UpSet_DOWN'
+                )
+        mk_df_for_each_intersection3(
+                mutant1_gene_set=set(data[0].down_df.index),
+                mutant1_name=data[0].name,
+                mutant2_gene_set=set(data[1].down_df.index),
+                mutant2_name=data[1].name,
+                mutant3_gene_set=set(data[2].down_df.index),
+                mutant3_name=data[2].name,
+                data=data,
+                path=df_path,
+                file_names='DOWN_intersection',
+                )
 
 
 def get_inverted_regulations_and_mk_venns_and_dataframes(
-        sets_dictionary,
-        mutants,
-        sub_dfs,
+        data,
         plot_formats,
         venn_directory_path,
+        upset_directory_path,
         dataframes_directory_path,
         ):
     """Generates the venn diagramas and the correspoding intersection
@@ -433,80 +491,97 @@ def get_inverted_regulations_and_mk_venns_and_dataframes(
     """
 
     inverted_regulation_dict = {}
+
+    for d in data:
+
+        inverted_regulation_dict[d.name] = {
+                'Up' : {
+                    'set' : set(d.up_df.index),
+                    'label' : (r'$\uparrow$' + d.name),
+                    },
+                'Down' : {
+                    'set' : set(d.down_df.index),
+                    'label' : (r'$\downarrow$' + d.name),
+                    },
+                }
+
     regulations = ("Up", "Down")
 
-    for mut in mutants:
-        other_mutants = [m for m in mutants if m is not mut]
+    for k in inverted_regulation_dict:
 
         for reg in regulations:
 
-            inverted_regulation_dict[mut] = {
-                    "reg" : reg,
-                    "label" : (r"$\uparrow$" + mut)
-                    }
+            plot_data_dict = {}
 
-            other_reg = "Down"
-            inverted_regulation_dict[other_mutants[0]] = {
-                "reg" : other_reg,
-                "label" : (r"$\downarrow$" + other_mutants[0])
-                }
-            inverted_regulation_dict[other_mutants[1]] = {
-                "reg" : other_reg,
-                "label" : (r"$\downarrow$" + other_mutants[1])
-                }
+            plot_data_dict[k] = 'Up'
 
-            name = f"{mut}_Up_others_Down"
+            name = f'{k}_Up_others_Down'
 
-            if reg == "Down":
-                inverted_regulation_dict[mut] = {
-                        "reg" : reg,
-                        "label" : (r"$\downarrow$" + mut)
-                        }
+            for notk in inverted_regulation_dict:
 
-                other_reg = "Up"
-                inverted_regulation_dict[other_mutants[0]] = {
-                    "reg" : other_reg,
-                    "label" : (r"$\uparrow$" + other_mutants[0])
-                    }
-                inverted_regulation_dict[other_mutants[1]] = {
-                    "reg" : other_reg,
-                    "label" : (r"$\uparrow$" + other_mutants[1])
-                    }
+                if notk is not k:
+                    plot_data_dict[notk] = 'Down'
 
-                name = f"{mut}_Down_others_Up"
+            if reg == 'Down':
+
+                plot_data_dict[k] = 'Down'
+
+                name = f'{k}_Down_others_Up'
+
+                for notk in inverted_regulation_dict:
+
+                    if notk is not k:
+                        plot_data_dict[notk] = 'Up'
 
             generate_venn3_diagram(
-                    mutant1_gene_set=sets_dictionary[mutants[0]][
-                        inverted_regulation_dict[mutants[0]]["reg"]
-                        ],
-                    mutant1_name=inverted_regulation_dict[mutants[0]]["label"],
-                    mutant2_gene_set=sets_dictionary[mutants[1]][
-                        inverted_regulation_dict[mutants[1]]["reg"]
-                        ],
-                    mutant2_name=inverted_regulation_dict[mutants[1]]["label"],
-                    mutant3_gene_set=sets_dictionary[mutants[2]][
-                        inverted_regulation_dict[mutants[2]]["reg"]
-                        ],
-                    mutant3_name=inverted_regulation_dict[mutants[2]]["label"],
+                    mutant1_gene_set=inverted_regulation_dict[
+                        data[0].name][plot_data_dict[data[0].name]]['set'],
+                    mutant1_name=inverted_regulation_dict[
+                        data[0].name][plot_data_dict[data[0].name]]['label'],
+                    mutant2_gene_set=inverted_regulation_dict[
+                        data[1].name][plot_data_dict[data[1].name]]['set'],
+                    mutant2_name=inverted_regulation_dict[
+                        data[1].name][plot_data_dict[data[1].name]]['label'],
+                    mutant3_gene_set=inverted_regulation_dict[
+                        data[2].name][plot_data_dict[data[2].name]]['set'],
+                    mutant3_name=inverted_regulation_dict[
+                        data[2].name][plot_data_dict[data[2].name]]['label'],
                     plot_formats=plot_formats,
-                    title="Inverted regulations.",
+                    title="Inverted regulations between mutants",
                     path=f"{venn_directory_path}/{name}",
                     )
-            mk_df_for_each_intersection(
-                mutant1_gene_set=sets_dictionary[mutants[0]][
-                    inverted_regulation_dict[mutants[0]]["reg"]
-                    ],
-                mutant1_name=mutants[0],
-                mutant2_gene_set=sets_dictionary[mutants[1]][
-                    inverted_regulation_dict[mutants[1]]["reg"]
-                    ],
-                mutant2_name=mutants[1],
-                mutant3_gene_set=sets_dictionary[mutants[2]][
-                    inverted_regulation_dict[mutants[2]]["reg"]
-                    ],
-                mutant3_name=mutants[2],
-                sub_dfs=sub_dfs,
-                path=dataframes_directory_path,
-                file_names=name
-                )
+            generate_upset_plot(
+                    mutant1_gene_set=inverted_regulation_dict[
+                        data[0].name][plot_data_dict[data[0].name]]['set'],
+                    mutant1_name=inverted_regulation_dict[
+                        data[0].name][plot_data_dict[data[0].name]]['label'],
+                    mutant2_gene_set=inverted_regulation_dict[
+                        data[1].name][plot_data_dict[data[1].name]]['set'],
+                    mutant2_name=inverted_regulation_dict[
+                        data[1].name][plot_data_dict[data[1].name]]['label'],
+                    mutant3_gene_set=inverted_regulation_dict[
+                        data[2].name][plot_data_dict[data[2].name]]['set'],
+                    mutant3_name=inverted_regulation_dict[
+                        data[2].name][plot_data_dict[data[2].name]]['label'],
+                    plot_formats=plot_formats,
+                    title='Inverted regulations between mutants',
+                    path=f'{upset_directory_path}/{name}'
+                    )
+            mk_df_for_each_intersection3(
+                    mutant1_gene_set=inverted_regulation_dict[
+                        data[0].name][plot_data_dict[data[0].name]]['set'],
+                    mutant1_name=inverted_regulation_dict[
+                        data[0].name][plot_data_dict[data[0].name]]['label'],
+                    mutant2_gene_set=inverted_regulation_dict[
+                        data[1].name][plot_data_dict[data[1].name]]['set'],
+                    mutant2_name=inverted_regulation_dict[
+                        data[1].name][plot_data_dict[data[1].name]]['label'],
+                    mutant3_gene_set=inverted_regulation_dict[
+                        data[2].name][plot_data_dict[data[2].name]]['set'],
+                    mutant3_name=inverted_regulation_dict[
+                        data[2].name][plot_data_dict[data[2].name]]['label'],
+                    data=data,
+                    path=dataframes_directory_path,
+                    file_names=name
+                    )
 

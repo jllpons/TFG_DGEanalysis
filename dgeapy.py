@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 
-"""License?
+"""
+dgeapy: a script that tries to analyse Differential Gene Expression (DGE)
+data at a different levels.
 """
 
+import os
 import sys
 import subprocess
 
@@ -32,12 +35,13 @@ usage: dgeapy.py <command> [options]
 
     elif arg_len > 1:
         cmd = sys.argv[1]
+        dgeapy_path = os.path.dirname(os.path.realpath(__file__))
 
         if cmd == "-h" or cmd == "--help":
             print(description)
 
         elif cmd == "multiplemuts":
-            subcmd = ["python", "dgeapy_multiplemuts.py",] + sys.argv[2:]
+            subcmd = ["python", f"{dgeapy_path}/dgeapy_multiplemuts.py",] + sys.argv[2:]
             subprocess.run(subcmd)
 
         elif cmd == "mkconfigs":

@@ -8,7 +8,8 @@ import matplotlib.pyplot as plt
 from matplotlib_venn import venn3, venn3_unweighted
 
 
-#-------# Function Definitions #-----------------------------------------------#
+plt.style.use(['default'])
+
 
 def generate_venn3_diagram(
         mutant1_gene_set,
@@ -23,6 +24,8 @@ def generate_venn3_diagram(
         ):
     """Generate a Venn diagram from 3 given sets and their respective names.
     """
+
+    plt.style.use(['default'])
 
     set_array = [mutant1_gene_set, mutant2_gene_set, mutant3_gene_set]
 
@@ -78,6 +81,7 @@ def generate_venn3_diagram_with_regulation_labels(
         - Third bit equals to the third set.
     """
 
+    plt.style.use(['default'])
 
     set_array = [mutant1_gene_set, mutant2_gene_set, mutant3_gene_set]
 

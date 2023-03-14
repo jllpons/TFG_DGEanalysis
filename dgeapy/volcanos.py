@@ -8,13 +8,10 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 
-#-------# Function Definitions #-----------------------------------------------#
-
-
 def generate_regulation_countplot(
         data,
         file_path,
-        mutant_name,
+        name,
         padj_threshold,
         foldchange_threshold,
         hue_order,
@@ -33,7 +30,7 @@ def generate_regulation_countplot(
                         )
 
     title = (
-            mutant_name
+            name
             +
             f" gene regulation stats for:\np-adj < {padj_threshold}"
             +
@@ -51,24 +48,21 @@ def generate_regulation_countplot(
     fig = count_plot.get_figure()
 
     for format in plot_formats:
-        plot_name = f"{file_path}_regulation-stats.{format}"
+        plot_name = f"{file_path}/{name}_regulation-stats.{format}"
         fig.savefig(plot_name, format=format, dpi=300)
 
         if format == "png":
-            plot_name = f"{file_path}_regulation-stats_transparent-bg.{format}"
+            plot_name = f"{file_path}/{name}_regulation-stats_transparent-bg.{format}"
             fig.savefig(plot_name, format=format, dpi=300, transparent=True)
 
     plt.close()
 
 
 def generate_volcano_plot(
-        dataframe,
+        data,
         file_path,
         foldchange_threshold,
-        log2foldchange_column_name,
         padj_threshold,
-        padj_column_name,
-        mutant_name,
         plot_formats,
         ):
     """Generates a volcano plot with log2 Fold change values on the x axis, and
@@ -78,20 +72,24 @@ def generate_volcano_plot(
     genes that have been reported as Up, Down or No sig.
     """
 
+    df = data.input_df
+    log2FC_column = data.df_columns['log2FoldChange']
+    padj_column = data.df_columns['padj']
+
     # Calculating the log2 threshold for FoldChange values
     log2FoldChange_threshold = np.log2(foldchange_threshold)
     # Same for -log10 threshold for padj values
     log10_padj_threshold = -np.log10(padj_threshold)
 
     # Adding -log10(padj) column to the dataframe
-    dataframe["-log10(padj)"] = -np.log10(dataframe[padj_column_name])
+    df["-log10(padj)"] = -np.log10(df[padj_column])
 
     # Creating a colomun wich values will be:
     # -NO if the gene's padj or Foldchange values doesn't surpass the thresholds
     # -DOWN if it's foldchange value is lesser than the negative threshold
     # -UP if it's foldchange value is greater than the positive threshold
     regulation_column = []
-    for a, b in zip(dataframe[log2foldchange_column_name], dataframe["-log10(padj)"]):
+    for a, b in zip(df[log2FC_column], df["-log10(padj)"]):
 
         if b < log10_padj_threshold:
             regulation_column.append("NO")
@@ -105,11 +103,7 @@ def generate_volcano_plot(
             regulation_column.append("NO")
 
     # Adding this column to the dataframe
-    dataframe.insert(
-            loc=len(dataframe.columns),
-            column="color",
-            value=regulation_column,
-            )
+    df.insert(loc=len(df.columns), column="color", value=regulation_column,)
 
     # Replacing UP/DOWN/NO with the same string + the number of instances for
     # each corresponding value in the column.
@@ -122,15 +116,15 @@ def generate_volcano_plot(
     down_newname = f"Down ({down_count})"
     no_newname = f"Not sig ({no_count})"
 
-    dataframe["color"] = dataframe["color"].map(
+    df["color"] = df["color"].map(
             {"UP":str(up_newname),"DOWN":str(down_newname),"NO":str(no_newname)}
             )
 
     # Generate a countplot for a better visualization
     generate_regulation_countplot(
-            data=dataframe["color"],
+            data=df["color"],
             file_path=file_path,
-            mutant_name=mutant_name,
+            name=data.name,
             padj_threshold=padj_threshold,
             foldchange_threshold=foldchange_threshold,
             hue_order=[no_newname, down_newname, up_newname],
@@ -143,8 +137,8 @@ def generate_volcano_plot(
 
     # Creating the plot
     volcano = sns.scatterplot(
-            data=dataframe,
-            x=log2foldchange_column_name,
+            data=df,
+            x=log2FC_column,
             y="-log10(padj)",
             hue="color",
             hue_order=[down_newname, no_newname, up_newname],
@@ -192,17 +186,17 @@ def generate_volcano_plot(
     # Label for y axis
     plt.ylabel("-$log_{10}$ Adjusted p-value", size=12)
     # Title for the plot
-    plt.title(f"{mutant_name} vs WT")
+    plt.title(f"{data.name} vs WT")
 
     fig = volcano.get_figure()
 
     # Create the same plot in each specificed format.
     for format in plot_formats:
-        plot_name = f"{file_path}_volcano.{format}"
+        plot_name = f"{file_path}/{data.name}_volcano.{format}"
         fig.savefig(plot_name, format=format, dpi=300)
 
         if format == "png":
-            plot_name = f"{file_path}_volcano_transparent-bg.{format}"
+            plot_name = f"{file_path}/{data.name}_volcano_transparent-bg.{format}"
             fig.savefig(plot_name, format=format, dpi=300, transparent=True)
 
     plt.close()

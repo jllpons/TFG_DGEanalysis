@@ -5,17 +5,13 @@ pySankey.
 """
 
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 from pysankey import sankey
 
 #------------------------------------------------------------------------------#
 
 def generate_sankey_diagram(
-        dataframes,
-        mutants,
-        fc_column_names,
-        padj_column_names,
+        data,
         fc_value,
         padj_value,
         plot_formats,
@@ -27,93 +23,117 @@ def generate_sankey_diagram(
 
     log2fc = np.log2(fc_value)
 
-    for a, b, c, m in zip(dataframes, fc_column_names, padj_column_names, mutants):
+    for a in data:
 
-        a.loc[a[c] > padj_value,"Regulation"] = "No sig"
-        a.loc[(a[b] < log2fc) & (a[b] > -log2fc), "Regulation"] = "No sig"
-        a.loc[(a["Regulation"] != "No sig")
-              & (a[b] >= log2fc), 
-                "Regulation"
+        a.input_df.loc[a.input_df[
+                            a.df_columns['padj']] > padj_value,'Regulation'
+                                 ] = "No sig"
+
+        a.input_df.loc[
+            (a.input_df[a.df_columns['log2FoldChange']] < log2fc)
+            & (a.input_df[a.df_columns['log2FoldChange']] > -log2fc), 'Regulation'
+                      ] = "No sig"
+
+        a.input_df.loc[(
+            a.input_df['Regulation'] != "No sig")
+            & (a.input_df[a.df_columns['log2FoldChange']] >= log2fc),
+                'Regulation'
                 ] = "Up"
-        a.loc[
-                (a["Regulation"] != "No sig") 
-                & (a[b] <= -log2fc),
-                "Regulation"
+
+        a.input_df.loc[
+                (a.input_df['Regulation'] != "No sig") 
+                & (a.input_df[a.df_columns['log2FoldChange']] <= -log2fc),
+                'Regulation'
                 ] = "Down"
-        a.loc[a["Regulation"].isnull(), "Regulation"] = "No sig"
 
-        for x, y, z, n in zip(dataframes, fc_column_names, padj_column_names, mutants):
+        for b in data:
 
-            if x is not a:
-                x.loc[x[z] > padj_value,"Regulation"] = "No sig"
-                x.loc[(x[y] < log2fc) & (a[y] > -log2fc), "Regulation"] = "No sig"
-                x.loc[(x["Regulation"] != "No sig")
-                      & (x[y] >= log2fc), 
-                        "Regulation"
+            if b is not a:
+
+                b.input_df.loc[b.input_df[
+                                    b.df_columns['padj']] > padj_value,'Regulation'
+                                         ] = "No sig"
+
+                b.input_df.loc[
+                    (b.input_df[b.df_columns['log2FoldChange']] < log2fc)
+                    & (b.input_df[b.df_columns['log2FoldChange']] > -log2fc), 'Regulation'
+                              ] = "No sig"
+
+                b.input_df.loc[(
+                    b.input_df['Regulation'] != "No sig")
+                    & (b.input_df[b.df_columns['log2FoldChange']] >= log2fc),
+                        'Regulation'
                         ] = "Up"
-                x.loc[
-                        (x["Regulation"] != "No sig") 
-                        & (x[y] <= -log2fc),
-                        "Regulation"
+
+                b.input_df.loc[
+                        (b.input_df['Regulation'] != "No sig") 
+                        & (b.input_df[b.df_columns['log2FoldChange']] <= -log2fc),
+                        'Regulation'
                         ] = "Down"
-                x.loc[x["Regulation"].isnull(), "Regulation"] = "No sig"
 
-                df = pd.concat([a["Regulation"], x["Regulation"]],
-                               axis=1,
-                               keys=["a_Regulation", "x_Regulation"]
-                               )
+                df = a.input_df.merge(
+                                b.input_df,
+                                how='outer',
+                                on='gene_id',
+                                suffixes=('_a', '_b')
+                                )
 
-                a_upcounts = (df["a_Regulation"] == "Up").sum()
-                a_nosigcounts = (df["a_Regulation"] == "No sig").sum()
-                a_downcounts = (df["a_Regulation"] == "Down").sum()
+                df.loc[df['Regulation_a'].isnull(), 'Regulation_a'] = 'No sig'
+                df.loc[df['Regulation_b'].isnull(), 'Regulation_b'] = 'No sig'
+
+                df = df[['Regulation_a', 'Regulation_b']]
+
+                a_upcounts = (df['Regulation_a'] == "Up").sum()
+                a_nosigcounts = (df['Regulation_a'] == "No sig").sum()
+                a_downcounts = (df['Regulation_a'] == "Down").sum()
 
                 a_total = a_upcounts + a_nosigcounts + a_downcounts
                 a_uppercentage = (100 * (a_upcounts / a_total))
                 a_nosigpercentage = (100 * (a_nosigcounts / a_total))
                 a_downpercentage = (100 * (a_downcounts / a_total))
 
-                a_uplabel = f"Up\n{a_upcounts}\n({a_uppercentage})"
-                a_nosiglabel = f"No sig\n{a_nosigcounts}\n({a_nosigpercentage})"
-                a_downlabel = f"Down\n{a_downcounts}\n({a_downpercentage})"
+                a_uplabel = f"Up\n{a_upcounts}\n({a_uppercentage:.1f}%)"
+                a_nosiglabel = f"No sig\n{a_nosigcounts}\n({a_nosigpercentage:.1f}%)"
+                a_downlabel = f"Down\n{a_downcounts}\n({a_downpercentage:.1f}%)"
 
-                x_upcounts = (df["x_Regulation"] == "Up").sum()
-                x_nosigcounts = (df["x_Regulation"] == "No sig").sum()
-                x_downcounts = (df["x_Regulation"] == "Down").sum()
+                b_upcounts = (df['Regulation_b'] == "Up").sum()
+                b_nosigcounts = (df['Regulation_b'] == "No sig").sum()
+                b_downcounts = (df['Regulation_b'] == "Down").sum()
 
-                x_total = x_upcounts + x_nosigcounts + x_downcounts
-                x_uppercentage = (100 * (x_upcounts / x_total))
-                x_nosigpercentage = (100 * (x_nosigcounts / x_total))
-                x_downpercentage = (100 * (x_downcounts / x_total))
+                b_total = b_upcounts + b_nosigcounts + b_downcounts
+                b_uppercentage = (100 * (b_upcounts / b_total))
+                b_nosigpercentage = (100 * (b_nosigcounts / b_total))
+                b_downpercentage = (100 * (b_downcounts / b_total))
 
-                x_uplabel = f"Up\n{x_upcounts}\n({x_uppercentage})"
-                x_nosiglabel = f"No sig\n{x_nosigcounts}\n({x_nosigpercentage})"
-                x_downlabel = f"Down\n{x_downcounts}\n({x_downpercentage})"
+                b_uplabel = f"Up\n{b_upcounts}\n({b_uppercentage:.1f}%)"
+                b_nosiglabel = f"No sig\n{b_nosigcounts}\n({b_nosigpercentage:.1f}%)"
+                b_downlabel = f"Down\n{b_downcounts}\n({b_downpercentage:.1f}%)"
 
-                df["a_Regulation"] = df["a_Regulation"].map({
+                df['Regulation_a'] = df['Regulation_a'].map({
                     "Up" : a_uplabel,
                     "No sig" : a_nosiglabel,
                     "Down" : a_downlabel,
                     })
-                df["x_Regulation"] = df["x_Regulation"].map({
-                    "Up" : x_uplabel,
-                    "No sig" : x_nosiglabel,
-                    "Down" : x_downlabel,
+                df['Regulation_b'] = df['Regulation_b'].map({
+                    "Up" : b_uplabel,
+                    "No sig" : b_nosiglabel,
+                    "Down" : b_downlabel,
                     })
 
                 colordict = {
                         a_nosiglabel : "silver",
                         a_downlabel : "cornflowerblue",
                         a_uplabel : "indianred",
-                        x_nosiglabel : "silver",
-                        x_downlabel : "cornflowerblue",
-                        x_uplabel : "indianred",
+                        b_nosiglabel : "silver",
+                        b_downlabel : "cornflowerblue",
+                        b_uplabel : "indianred",
                         }
 
                 sankey(
-                        df["a_Regulation"],
-                        df["x_Regulation"],
+                        df['Regulation_a'],
+                        df['Regulation_b'],
                         leftLabels=[a_downlabel, a_nosiglabel, a_uplabel,],
-                        rightLabels=[x_downlabel, x_nosiglabel, x_uplabel,],
+                        rightLabels=[b_downlabel, b_nosiglabel, b_uplabel,],
                         colorDict=colordict,
                         fontsize=8,
                         )
@@ -121,17 +141,13 @@ def generate_sankey_diagram(
                 plt.gcf().set_size_inches(4 ,6)
 
                 plt.title(
-                        "Flow of Diffetentially Expressed Genes:\n" \
-                        f"from {m} to {n}."
+                    f'Flow of Diffetentially Expressed Genes\n from {a.name} to {b.name}'
                         )
 
                 for format in plot_formats:
-                    plt.savefig(f"{path}{m}vs{n}sankey.{format}", dpi=300)
+                    plt.savefig(f"{path}/{a.name}_vs_{b.name}_sankey.{format}", dpi=300)
 
+                plt.clf()
                 plt.close()
-
-
-
-
 
 

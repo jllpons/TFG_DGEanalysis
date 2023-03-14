@@ -1,19 +1,30 @@
 #!/usr/bin/env python3
 
-"""Lincense¿?
+"""
 """
 
 import os
 import sys
 import argparse
+from dataclasses import dataclass
 
 import pandas as pd
 
 import dgeapy
 
-#------------------------------------------------------------------------------#
 
-def main():
+@dataclass
+class Sampledata:
+    """Store all of the data related to each sample."""
+    name: str
+    input_df: pd.DataFrame
+    df_columns:  dict
+    dge_df: pd.DataFrame
+    up_df: pd.DataFrame
+    down_df: pd.DataFrame
+
+
+def main(args=None):
 
     description = "Differential Gene Expression data analysis from multiple " \
                   "dataframes containing mutant vs. wild type experiments."
@@ -64,14 +75,14 @@ def main():
             "-g",
             action='store_true',
             default=False,
-            help="include genes annotated as novel gene or sRNA"
+            help="include non-coding transcripts"
             )
 
     args = parser.parse_args()
 
     if not args.configuration_json_file:
         parser.print_help()
-        sys.exit("\n ** The JSON configuration file is required **\n")
+        sys.exit("\n** The JSON configuration file is required **\n")
 
     config_file = os.path.abspath(args.configuration_json_file)
     if not os.path.isfile(config_file):
@@ -85,13 +96,16 @@ def main():
     P_VALUE_THRESHOLD = args.pvalue
     PADJ_THRESHOLD = args.padj
     PLOT_FORMATS = args.formats
-    MUTANTS = list(config_dictionary.keys())
     DATAFRAMES = config_dictionary
     include_novels = args.g
 
-    for mut in MUTANTS:
-        if not os.path.isfile(DATAFRAMES[mut]):
-                raise FileNotFoundError(f"Could not find file: {DATAFRAMES[mut]}")
+    if len(DATAFRAMES) != 3:
+        sys.exit('\n** dgeapy multiplemuts just supports data from 3' \
+                 ' different samples **\n')
+
+    for k in DATAFRAMES:
+        if not os.path.isfile(DATAFRAMES[k]):
+                raise FileNotFoundError(f"Could not find file: {DATAFRAMES[k]}")
 
     cwd = os.getcwd()
     output_dir = f"{cwd}/dgeapy_output"
@@ -108,227 +122,171 @@ def main():
     else:
         os.mkdir(output_dir)
 
-    output_df_dir = f"{output_dir}/dataframes"
-    os.mkdir(output_df_dir)
-    output_volcano_dir = f"{output_dir}/volcano_plots"
-    os.mkdir(output_volcano_dir)
-    output_venn_dir = f"{output_dir}/venn_diagrams"
-    os.mkdir(output_venn_dir)
-    output_upset_dir = f"{output_dir}/upset_plots"
-    os.mkdir(output_upset_dir)
-    output_sankey_dir = f"{output_dir}/sankey_diagrams"
-    os.mkdir(output_sankey_dir)
+    output_dirs_dict = {
+            "df" : f"{output_dir}/dataframes",
+            "volcano" : f"{output_dir}/volcano_plots",
+            "venn" : f"{output_dir}/venn_diagrams",
+            "upset" : f"{output_dir}/upset_plots",
+            "sankey" : f"{output_dir}/sankey_diagrams"
+            }
+    for k in output_dirs_dict:
+        os.mkdir(output_dirs_dict[k])
 
-    # Storing df containning DE, Up and Down regulated genes.
-    mutant_regulations_dictionary = {}
+    data = []
+    for k in DATAFRAMES:
 
-    for mutant in MUTANTS:
+        sample_df_dir = f'{output_dirs_dict["df"]}/{k}'
+        os.mkdir(sample_df_dir)
 
-        mutant_df_dir = f"{output_df_dir}/{mutant}"
-        os.mkdir(mutant_df_dir)
-
-        mutant_df = pd.read_csv(
-                            DATAFRAMES[mutant],
-                            sep="\t",
-                            na_values=["--", "",]
-                            )
-
-        dgeapy.add_fold_change_columns(mutant_df)
-        dgeapy.add_regulation_columns(mutant_df)
+        df = pd.read_csv(
+                    DATAFRAMES[k],
+                    sep="\t",
+                    na_values=["--", "",]
+                    )
 
         if include_novels is False:
-            mutant_df = mutant_df[~mutant_df.gene_id.str.contains("Novel")]
-            mutant_df = mutant_df[~mutant_df.gene_id.str.contains("sRNA")]
+            df = df[~df.gene_id.str.contains("Novel")]
+            df = df[~df.gene_id.str.contains("sRNA")]
+
+        df = df.set_index('gene_id')
+
+        dgeapy.add_fold_change_columns(df)
+        dgeapy.add_regulation_columns(df)
 
         # Dictionary containing names of the columnns of:
         # FC, log2FC, p-value and padj values.
-        column_names_to_check = dgeapy.column_names_to_check(mutant_df)
+        column_names_to_check = dgeapy.column_names_to_check(df)
 
         # DEG according to FC, pvale and padj values
-        mutant_df_deg = dgeapy.filter_FC_PVALUE_PADJ(
-                                dataframe=mutant_df,
-                                foldchange_threshold=FOLD_CHANGE_THRESHOLD,
-                                foldchange_column_name=column_names_to_check["FoldChange"],
-                                p_value_threshold=P_VALUE_THRESHOLD,
-                                p_value_column_name=column_names_to_check["pvalue"],
-                                padj_threshold=PADJ_THRESHOLD,
-                                padj_column_name=column_names_to_check["padj"],
-                                )
+        dge_df = dgeapy.filter_FC_PVALUE_PADJ(
+                            dataframe=df,
+                            foldchange_threshold=FOLD_CHANGE_THRESHOLD,
+                            foldchange_column_name=column_names_to_check["FoldChange"],
+                            p_value_threshold=P_VALUE_THRESHOLD,
+                            p_value_column_name=column_names_to_check["pvalue"],
+                            padj_threshold=PADJ_THRESHOLD,
+                            padj_column_name=column_names_to_check["padj"],
+                            )
 
         # Up and Down regulated genes from DEG
-        mutant_df_up = mutant_df_deg[mutant_df_deg[
-                                        column_names_to_check["Regulation"]
-                                                    ] == "Up"]
-        mutant_df_down = mutant_df_deg[mutant_df_deg[
-                                        column_names_to_check["Regulation"]
-                                                    ] == "Down"]
+        up_df = dge_df[dge_df[column_names_to_check["Regulation"]] == "Up"]
+        donw_df = dge_df[dge_df[column_names_to_check["Regulation"]] == "Down"]
 
-        # Adding dfs of  DE, Up and Down regulated genes
-        mutant_regulations_dictionary[mutant] = {
-                "DEG" : mutant_df_deg,
-                "Up" : mutant_df_up,
-                "Down" : mutant_df_down,
-                }
+        sample_data = Sampledata(
+                        name=k,
+                        input_df=df,
+                        df_columns=column_names_to_check,
+                        dge_df=dge_df,
+                        up_df=up_df,
+                        down_df=donw_df
+                        )
+        data.append(sample_data)
 
         # Saving to csv and excel files.
-        mutant_df.to_csv(
-                    f"{mutant_df_dir}/{mutant}.tsv",
-                    sep="\t",
-                    index=False,
-                    )
-        mutant_df.to_excel(
-                    f"{mutant_df_dir}/{mutant}.xlsx",
-                    index=False,
-                    )
-        mutant_df_deg.to_csv(
-                        f"{mutant_df_dir}/{mutant}_DEG.tsv",
-                        sep="\t",
-                        index=False,
-                        )
-        mutant_df_deg.to_excel(
-                        f"{mutant_df_dir}/{mutant}_DEG.xlsx",
-                        index=False,
-                        )
-        mutant_df_up.to_csv(
-                        f"{mutant_df_dir}/{mutant}_UP.tsv",
-                        sep="\t",
-                        index=False,
-                        )
-        mutant_df_up.to_excel(
-                        f"{mutant_df_dir}/{mutant}_UP.xlsx",
-                        index=False,
-                        )
-        mutant_df_down.to_csv(
-                        f"{mutant_df_dir}/{mutant}_DOWN.tsv",
-                        sep="\t",
-                        index=False,
-                        )
-        mutant_df_down.to_excel(
-                        f"{mutant_df_dir}/{mutant}_DOWN.xlsx",
-                        index=False,
-                        )
+        sample_data.input_df.to_csv(
+                                f'{sample_df_dir}/{sample_data.name}_input.tsv',
+                                sep="\t",
+                                )
+        sample_data.input_df.to_excel(
+                                f'{sample_df_dir}/{sample_data.name}_input.xlsx',
+                                )
+        sample_data.dge_df.to_csv(
+                                f'{sample_df_dir}/{sample_data.name}_DEG.tsv',
+                                sep="\t",
+                                )
+        sample_data.dge_df.to_excel(
+                                f'{sample_df_dir}/{sample_data.name}_DEG.xlsx',
+                                )
+        sample_data.up_df.to_csv(
+                                f'{sample_df_dir}/{sample_data.name}_UP.tsv',
+                                sep="\t",
+                                )
+        sample_data.up_df.to_excel(
+                                f'{sample_df_dir}/{sample_data.name}_UP.xlsx',
+                                )
+        sample_data.down_df.to_csv(
+                                f'{sample_df_dir}/{sample_data.name}_DOWN.tsv',
+                                sep="\t",
+                                )
+        sample_data.dge_df.to_excel(
+                                f'{sample_df_dir}/{sample_data.name}_DOWN.xlsx',
+                                )
 
         # Generate a volcano and a count plots
         dgeapy.generate_volcano_plot(
-                dataframe=mutant_df,
-                file_path=f"{output_volcano_dir}/{mutant}",
+                data=sample_data,
+                file_path=output_dirs_dict['volcano'],
                 foldchange_threshold=FOLD_CHANGE_THRESHOLD,
-                log2foldchange_column_name=column_names_to_check["log2FoldChange"],
                 padj_threshold=PADJ_THRESHOLD,
-                padj_column_name=column_names_to_check["padj"],
-                mutant_name=mutant,
                 plot_formats=PLOT_FORMATS,
                 )
 
-    # Dictionary containing a set of gene IDs for each different
-    # mutant gene regulations.
-    mut_reg_GeneIdSet_dict = {}
-    for mut in mutant_regulations_dictionary:
+    # Sankey diagrams
+    dgeapy.generate_sankey_diagram(
+            data,
+            fc_value=FOLD_CHANGE_THRESHOLD,
+            padj_value=PADJ_THRESHOLD,
+            plot_formats=PLOT_FORMATS,
+            path=output_dirs_dict['sankey']
+            )
 
-        mut_reg_GeneIdSet_dict[mut] = {}
-
-        for reg in mutant_regulations_dictionary[mut]:
-
-            mut_reg_GeneIdSet_dict[mut][reg] = set(
-                    mutant_regulations_dictionary[mut][reg].gene_id
-                    )
-
-    # For the 3 sets of DEG gene IDs:
+    # For the 3 sets of gene IDs for DEG, UP and DOWN regulated genes:
     #   - Generate 2 venn's diagrams representing the intersections of
     #     gene IDs. One will be defalut, the other will be unweight.
     #   - Generete an upset plot for also representing the intersections
     #   - From the intersections represented, generate  a dataframe for each
     #     containing all of the relevant information and save it to a file.
     dgeapy.mk_venn_upset_and_intersections_dfs(
-            mutant1_gene_set=mut_reg_GeneIdSet_dict[MUTANTS[0]]["DEG"],
-            mutant1_name=MUTANTS[0],
-            mutant2_gene_set=mut_reg_GeneIdSet_dict[MUTANTS[1]]["DEG"],
-            mutant2_name=MUTANTS[1],
-            mutant3_gene_set=mut_reg_GeneIdSet_dict[MUTANTS[2]]["DEG"],
-            mutant3_name=MUTANTS[2],
+            data=data,
             plot_formats=PLOT_FORMATS,
-            plots_title="Differentially expressed genes.",
-            venn_path=f"{output_venn_dir}/venn_DEG",
-            upset_path=f"{output_upset_dir}/upset_DEG",
-            df_path=output_df_dir,
-            sub_dfs=mutant_regulations_dictionary,
-            df_filenames="DEG_interesction",
+            venn_path=output_dirs_dict["venn"],
+            upset_path=output_dirs_dict["upset"],
+            df_path=output_dirs_dict["df"],
             )
 
     # Both up/down_regulation_labels are dictionaries conaining
     # the labels for the next venn diagrams we're going to generate.
     # They'll display the actual number of genes considered
     # up and down regulated at the same time.
-    up_regulation_labels = dgeapy.get_gene_ids_set_for_intersections(
-            set1=mut_reg_GeneIdSet_dict[MUTANTS[0]]["Up"],
-            set2=mut_reg_GeneIdSet_dict[MUTANTS[1]]["Up"],
-            set3=mut_reg_GeneIdSet_dict[MUTANTS[2]]["Up"],
-            )
-    down_regulation_labels = dgeapy.get_gene_ids_set_for_intersections(
-            set1=mut_reg_GeneIdSet_dict[MUTANTS[0]]["Down"],
-            set2=mut_reg_GeneIdSet_dict[MUTANTS[1]]["Down"],
-            set3=mut_reg_GeneIdSet_dict[MUTANTS[2]]["Down"],
-            )
-    # Generate the same two diagrams but with the labels
-    dgeapy.generate_venn3_diagram_with_regulation_labels(
-            mutant1_gene_set=mut_reg_GeneIdSet_dict[MUTANTS[0]]["DEG"],
-            mutant1_name=MUTANTS[0],
-            mutant2_gene_set=mut_reg_GeneIdSet_dict[MUTANTS[1]]["DEG"],
-            mutant2_name=MUTANTS[1],
-            mutant3_gene_set=mut_reg_GeneIdSet_dict[MUTANTS[2]]["DEG"],
-            mutant3_name=MUTANTS[2],
-            plot_formats=PLOT_FORMATS,
-            up_regulation_labels=up_regulation_labels,
-            down_regulation_labels=down_regulation_labels,
-            title="Differentially expressed genes.",
-            file_path=f"{output_venn_dir}/venn_DEG_labels",
-            )
-
-    # Upregulated sets:
-    dgeapy.mk_venn_upset_and_intersections_dfs(
-            mutant1_gene_set=mut_reg_GeneIdSet_dict[MUTANTS[0]]["Up"],
-            mutant1_name=MUTANTS[0],
-            mutant2_gene_set=mut_reg_GeneIdSet_dict[MUTANTS[1]]["Up"],
-            mutant2_name=MUTANTS[1],
-            mutant3_gene_set=mut_reg_GeneIdSet_dict[MUTANTS[2]]["Up"],
-            mutant3_name=MUTANTS[2],
-            plot_formats=PLOT_FORMATS,
-            plots_title="Upregulated genes.",
-            venn_path=f"{output_venn_dir}/venn_UP",
-            upset_path=f"{output_upset_dir}/upset_UP",
-            df_path=output_df_dir,
-            sub_dfs=mutant_regulations_dictionary,
-            df_filenames="UP_interesction",
-            )
-    # Downregulated sets:
-    dgeapy.mk_venn_upset_and_intersections_dfs(
-            mutant1_gene_set=mut_reg_GeneIdSet_dict[MUTANTS[0]]["Down"],
-            mutant1_name=MUTANTS[0],
-            mutant2_gene_set=mut_reg_GeneIdSet_dict[MUTANTS[1]]["Down"],
-            mutant2_name=MUTANTS[1],
-            mutant3_gene_set=mut_reg_GeneIdSet_dict[MUTANTS[2]]["Down"],
-            mutant3_name=MUTANTS[2],
-            plot_formats=PLOT_FORMATS,
-            plots_title="Downregulated genes.",
-            venn_path=f"{output_venn_dir}/venn_DOWN",
-            upset_path=f"{output_upset_dir}/upset_DOWN",
-            df_path=output_df_dir,
-            sub_dfs=mutant_regulations_dictionary,
-            df_filenames="DOWN_interesction",
-            )
+    if len(data) == 3:
+        up_regulation_labels = dgeapy.get_gene_ids_set_for_intersections(
+                set1=set(data[0].up_df.index),
+                set2=set(data[0].up_df.index),
+                set3=set(data[0].up_df.index),
+                )
+        down_regulation_labels = dgeapy.get_gene_ids_set_for_intersections(
+                set1=set(data[0].up_df.index),
+                set2=set(data[0].up_df.index),
+                set3=set(data[0].up_df.index),
+                )
+        # Generate the same two diagrams but with the labels
+        dgeapy.generate_venn3_diagram_with_regulation_labels(
+                mutant1_gene_set=set(data[0].dge_df.index),
+                mutant1_name=data[0].name,
+                mutant2_gene_set=set(data[1].dge_df.index),
+                mutant2_name=data[1].name,
+                mutant3_gene_set=set(data[2].dge_df.index),
+                mutant3_name=data[2].name,
+                plot_formats=PLOT_FORMATS,
+                up_regulation_labels=up_regulation_labels,
+                down_regulation_labels=down_regulation_labels,
+                title="Differentially expressed genes",
+                file_path=f"{output_dirs_dict['venn']}/venn_DEG_labels",
+                )
 
     # Comparing sets for the 6 possible inverted regulations combinations.
     # Makes a venn diagramm and generates 7 dataframes for the genes of each
     # intersection.
-    inverted_reg_dir = f"{output_venn_dir}/inverted_regulations"
-    os.mkdir(inverted_reg_dir)
+    inverted_reg_venn_dir = f"{output_dirs_dict['venn']}/inverted_regulations"
+    inverted_reg_upset_dir = f"{output_dirs_dict['upset']}/inverted_regulations"
+    os.mkdir(inverted_reg_venn_dir)
+    os.mkdir(inverted_reg_upset_dir)
     dgeapy.get_inverted_regulations_and_mk_venns_and_dataframes(
-            sets_dictionary=mut_reg_GeneIdSet_dict,
-            mutants=MUTANTS,
-            sub_dfs=mutant_regulations_dictionary,
+            data=data,
             plot_formats=PLOT_FORMATS,
-            venn_directory_path=inverted_reg_dir,
-            dataframes_directory_path=output_df_dir,
+            venn_directory_path=inverted_reg_venn_dir,
+            upset_directory_path=inverted_reg_upset_dir,
+            dataframes_directory_path=output_dirs_dict['df'],
             )
 
 if __name__ == "__main__":

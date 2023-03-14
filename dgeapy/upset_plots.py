@@ -6,7 +6,6 @@
 import matplotlib.pyplot as plt
 from upsetplot import from_contents, UpSet
 
-#------------------------------------------------------------------------------#
 
 def generate_upset_plot(
         mutant1_gene_set,
@@ -22,6 +21,8 @@ def generate_upset_plot(
     """Generate Upset plot from 3 given sets of gene IDs and their
     respective mutant names.
     """
+
+    plt.style.use(['default'])
 
     upset_sets = from_contents({
                     mutant1_name : list(mutant1_gene_set),
