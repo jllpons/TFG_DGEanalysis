@@ -22,7 +22,7 @@ dgeapy.py is a script that tries to analyse Differential Gene Expression (DGE) d
 
 ## Usage
 
-```bash
+```
 # basic usage
 > ./dgeapy.py -h
 
