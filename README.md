@@ -23,7 +23,6 @@ dgeapy.py is a script that tries to analyse Differential Gene Expression (DGE) d
 ## Usage
 
 ```
-# basic usage
 > ./dgeapy.py -h
 
 dgeapy: Script for Differential Gene Expression data analyisis from a dataframe.
@@ -38,8 +37,11 @@ usage: dgeapy.py <command> [options]
 
     options:
         -h, --help
+```
 
-# analyze multiple samples
+For DGE analyisis of multiple samples you can use:
+
+```
 > ./dgeapy.py multiplemuts -h
 
 usage: dgeapy.py multiplemuts <config.json>
