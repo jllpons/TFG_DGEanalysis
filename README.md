@@ -25,7 +25,7 @@ dgeapy.py is a script that tries to analyse Differential Gene Expression (DGE) d
 ```
 > ./dgeapy.py -h
 
-dgeapy: Script for Differential Gene Expression data analyisis from a dataframe.
+dgeapy: Script for Differential Gene Expression data analyisis at different levels.
 
 usage: dgeapy.py <command> [options]
 
@@ -33,6 +33,7 @@ usage: dgeapy.py <command> [options]
         multiplemuts    analyze a dataframe contaning 3 mutants
 
     utilities:
+        mapgenes        map geneIDs using a <map.tsv> file
         mkconfigs       create config.json file samples
 
     options:
@@ -46,7 +47,8 @@ For DGE analyisis of multiple samples you can use:
 
 usage: dgeapy.py multiplemuts <config.json>
 
-Differential Gene Expression data analysis from multiple dataframes containing mutant vs. wild type experiments.
+Differential Gene Expression data analysis between 2 or 3
+'mutant vs. wild' like type experiments.
 
 positional arguments:
   <config.json>        path to JSON configuration file
