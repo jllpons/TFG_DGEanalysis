@@ -69,6 +69,7 @@ def generate_sub_dataframes_3muts(
 
     return sub_dataframes
 
+
 def column_names_to_check(dataframe):
     """This function checks if "_FoldChange", "pvalue" or "padj" are present in any
     column name of the given dataframe and returns the names as a dictionary.
@@ -522,16 +523,13 @@ def get_inverted_regulations_and_mk_venns_and_dataframes(
                 if notk is not k:
                     plot_data_dict[notk] = 'Down'
 
-            if reg == 'Down':
+                    if reg == 'Down':
 
-                plot_data_dict[k] = 'Down'
+                        plot_data_dict[k] = 'Down'
 
-                name = f'{k}_Down_others_Up'
-
-                for notk in inverted_regulation_dict:
-
-                    if notk is not k:
                         plot_data_dict[notk] = 'Up'
+
+                        name = f'{k}_Down_others_Up'
 
             generate_venn3_diagram(
                     mutant1_gene_set=inverted_regulation_dict[

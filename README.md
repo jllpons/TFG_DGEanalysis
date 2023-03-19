@@ -60,3 +60,20 @@ optional arguments:
   -g                   include non-coding transcripts
 ```
 
+And if you need to map geneIDs between strains you can use:
+
+```
+> ./dgeapy.py mapgenes -h
+usage: dgeapy.py mapgenes <config.json>
+
+Script for mapping gene IDs between different strains. Given a .tsv file that
+serves as a map and a number of dataframes containing geneIDs. Return the
+dataframes containing only mapped geneIDs.
+
+positional arguments:
+  <config.json>  path to JSON configuration file
+
+optional arguments:
+  -h, --help     show this help message and exit
+```
+

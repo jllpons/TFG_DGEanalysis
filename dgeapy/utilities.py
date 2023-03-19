@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
-"""Utilities WIP
-"""
+"""Utilities for dgeappy"""
 
 import os
 import json
@@ -20,9 +19,29 @@ def mkconfigs():
             "mutB" : "path/to/mutB.tsv",
             "mutC" : "path/to/mutC.tsv"
             }
+    json_mapgenes = {
+                'map' : {
+                    'path' : 'path/to/yourmap.tsv',
+                    'key_to_use' : 'gene IDs column name in <map.tsv> that will appear as geneIDs in the dfs'
+                    },
+                'strains' : {
+                    'yourstrain_1' : {
+                        'df' : 'path/to/yourstrain_1.tsv',
+                        'id_col_in_map' : 'Column name in <map.tsv> for this strain',
+                        'id_col_in_df' : 'gene IDs column name in <yourstrain_1.tsv>',
+                        },
+                    'yourstrain_N' : {
+                        'df' : 'path/to/yourstrain_N.tsv',
+                        'id_col_in_map' : 'Column name in <map.tsv> for this strain',
+                        'id_col_in_df' : 'gene IDs column name in <yourstrain_N.tsv>',
+                        },
+                    }
+                }
 
     with open(f"{os.getcwd()}/multiplemuts_sample_config.json", "w") as j:
         j.write(json.dumps(json_multiplemuts, indent=4))
+    with open(f"{os.getcwd()}/mapgenes_sample_config.json", "w") as j:
+        j.write(json.dumps(json_mapgenes, indent=4))
 
 
 def read_config_json_file(config_file):

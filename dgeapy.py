@@ -15,7 +15,7 @@ from dgeapy.utilities import mkconfigs
 def main():
 
     description = """
-dgeapy: Script for Differential Gene Expression data analyisis from a dataframe.
+dgeapy: Script for Differential Gene Expression data analyisis at different levels.
 
 usage: dgeapy.py <command> [options]
 
@@ -23,6 +23,7 @@ usage: dgeapy.py <command> [options]
         multiplemuts    analyze a dataframe contaning 3 mutants
 
     utilities:
+        mapgenes        map geneIDs using a <map.tsv> file
         mkconfigs       create config.json file samples
 
     options:
@@ -42,6 +43,10 @@ usage: dgeapy.py <command> [options]
 
         elif cmd == "multiplemuts":
             subcmd = ["python", f"{dgeapy_path}/dgeapy_multiplemuts.py",] + sys.argv[2:]
+            subprocess.run(subcmd)
+
+        elif cmd == "mapgenes":
+            subcmd = ["python", f"{dgeapy_path}/dgeapy_mapgenes.py",] + sys.argv[2:]
             subprocess.run(subcmd)
 
         elif cmd == "mkconfigs":
