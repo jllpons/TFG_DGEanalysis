@@ -1,4 +1,4 @@
-# End of Degree Project: Differential Gene Expression Analysis.
+# DGEAPY: Differential Gene Expression Analysis using Python
 
 **NOTE**: This repository contains all of the scripts I've created for my Bachelor's End of Degree Project. The main motivation is being able to share what I've done and serve as a way for me to gain experience with the git version control system and remote repositories. Thus, **don't expect any fully functional and mantained program**.
 

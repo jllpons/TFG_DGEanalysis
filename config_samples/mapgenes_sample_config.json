@@ -1,0 +1,15 @@
+{
+    "map": "path/to/yourmap.tsv",
+    "strains": {
+        "yourstrain_1": {
+            "df": "path/to/yourstrain_1.tsv",
+            "id_col_in_map": "Column name in <map.tsv> for this strain",
+            "id_col_in_df": "gene IDs column name in <yourstrain_1.tsv>"
+        },
+        "yourstrain_N": {
+            "df": "path/to/yourstrain_N.tsv",
+            "id_col_in_map": "Column name in <map.tsv> for this strain",
+            "id_col_in_df": "gene IDs column name in <yourstrain_N.tsv>"
+        }
+    }
+}
