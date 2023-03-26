@@ -61,22 +61,22 @@ def main():
             metavar='STR',
             default='',
             type=str,
-            help='this geneIDs will appear as "mapped_geneID" in the '       \
-                 'generated dataframes otherwise strain geneIDs present in ' \
-                 'map will be used'
+            help='geneIDs column name in <map.ysv> that  will appear as ' \
+                 '"mapped_geneID" in the generated dataframes. Otherwise ' \
+                 ' strain geneIDs will be used ' \
                  )
     parser.add_argument(
             '-s', '--stats',
             action='store_true',
             default=False,
-            help='generate a <stats.txt> file with the stats about the mapping'
+            help='generate a <stats.txt> file'
             )
     parser.add_argument(
             '-u', '--unmapped',
             action='store_true',
             default=False,
-            help='save to TSV files containing (1) orphan geneIDs and (2) ' \
-                 'geneIDs that are mapped but not present in input dfs'
+            help='save two TSV files containing (1) orphan geneIDs and (2) ' \
+                 'geneIDs that are mapped but not present in all of the input dfs'
             )
     # TODO:
     #     - Add output options

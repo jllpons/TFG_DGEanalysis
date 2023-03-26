@@ -77,10 +77,10 @@ positional arguments:
 
 optional arguments:
   -h, --help         show this help message and exit
-  -k STR, --key STR  this geneIDs will appear as "mapped_geneID" in the
-                     generated dataframes otherwise strain geneIDs present in map will be used.
-  -s, --stats        generate a <stats.txt> file with the stats about the mapping
-  -u, --unmapped     save to TSV files containing (1) orphan geneIDs and (2) geneIDs
+  -k STR, --key STR  geneIDs column name that will appear as "mapped_geneID"
+                     in the generated dataframes. Otherwise strain geneIDs will be used
+  -s, --stats        generate a <stats.txt> file.
+  -u, --unmapped     save two TSV files containing (1) orphan geneIDs and (2) geneIDs
                      that are mapped but not present in input dfs> ./dgeapy.py mapgenes -h
 ```
 
