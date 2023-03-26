@@ -6,7 +6,7 @@
 
 ## Description
 
-dgeapy.py is a script that tries to analyse Differential Gene Expression (DGE) data at a different levels.
+dgeapy.py is a script that tries to analyse Differential Gene Expression (DGE) data at a different levels with a focus on data visualisation.
 
 ## Dependencies
 
@@ -62,20 +62,25 @@ optional arguments:
   -g                   include non-coding transcripts
 ```
 
-And if you need to map geneIDs between strains you can use:
+And if you need to map geneIDs between different strains you can use:
 
 ```
 > ./dgeapy.py mapgenes -h
 usage: dgeapy.py mapgenes <config.json>
 
-Script for mapping gene IDs between different strains. Given a .tsv file that
-serves as a map and a number of dataframes containing geneIDs. Return the
+Script for mapping gene IDs between different strains. Uses a TSV file that
+serves as a map and a number of dataframes containing geneIDs. Returns the
 dataframes containing only mapped geneIDs.
 
 positional arguments:
-  <config.json>  path to JSON configuration file
+  <config.json>      path to JSON configuration file
 
 optional arguments:
-  -h, --help     show this help message and exit
+  -h, --help         show this help message and exit
+  -k STR, --key STR  this geneIDs will appear as "mapped_geneID" in the
+                     generated dataframes otherwise strain geneIDs present in map will be used.
+  -s, --stats        generate a <stats.txt> file with the stats about the mapping
+  -u, --unmapped     save to TSV files containing (1) orphan geneIDs and (2) geneIDs
+                     that are mapped but not present in input dfs> ./dgeapy.py mapgenes -h
 ```
 
