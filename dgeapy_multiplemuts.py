@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-import pdb
-
 import os
 import sys
 import argparse
@@ -321,9 +319,8 @@ def main():
                 file_path=f"{output_dirs_dict['venn']}/venn_DEG_labels",
                 )
 
-    # Comparing sets for the 6 possible inverted regulations combinations.
-    # Makes a venn diagramm and generates 7 dataframes for the genes of each
-    # intersection.
+    # Comparing sets for the possible inverted regulations combinations.
+    # TODO: compute inverted regulations for 4-sample data.
     inverted_reg_venn_dir = f"{output_dirs_dict['venn']}/inverted_regulations"
     inverted_reg_upset_dir = f"{output_dirs_dict['upset']}/inverted_regulations"
     os.mkdir(inverted_reg_venn_dir)
