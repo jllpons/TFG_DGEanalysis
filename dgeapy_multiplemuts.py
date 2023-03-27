@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
-"""
-"""
+import pdb
 
 import os
 import sys
@@ -14,8 +13,8 @@ import dgeapy
 
 
 @dataclass
-class Sampledata:
-    """Store all of the data related to each sample."""
+class SampleData:
+    """Store data related to each sample."""
     name: str
     input_df: pd.DataFrame
     df_columns:  dict
@@ -24,10 +23,11 @@ class Sampledata:
     down_df: pd.DataFrame
 
 
-def main(args=None):
+def main():
 
-    description = "Differential Gene Expression data analysis from multiple " \
-                  "dataframes containing mutant vs. wild type experiments."
+    description = """
+    Differential Gene Expression data analysis between 2, 3 and 4
+    'mutant vs. wild' like type experiments."""
 
     parser = argparse.ArgumentParser(
                         description=description,
@@ -43,28 +43,22 @@ def main(args=None):
             help="path to JSON configuration file",
             )
     parser.add_argument(
-            "--pvalue",
-            nargs=1,
-            default=0.05,
-            type=float,
-            help="p-value threshold, default is 0.05",
-            )
-    parser.add_argument(
-            "--padj",
-            nargs=1,
+            '--padj',
+            metavar="FLOAT",
             default=0.05,
             type=float,
             help="adjusted p-value threshold, default is 0.05",
             )
     parser.add_argument(
-            "--fc",
-            nargs=1,
-            default=2.00,
+            '--fc',
+            metavar="FLOAT",
+            default=1.50,
             type=float,
-            help="fold change threshold, default is 2.00",
+            help="fold change threshold, default is 1.50",
             )
     parser.add_argument(
             "--formats",
+            metavar="STR,",
             nargs="?",
             default=["png"],
             type=str,
@@ -72,7 +66,7 @@ def main(args=None):
             help="plot formats, defalut is png",
             )
     parser.add_argument(
-            "-g",
+            '-n', '--non-coding',
             action='store_true',
             default=False,
             help="include non-coding transcripts"
@@ -93,14 +87,13 @@ def main(args=None):
     config_dictionary = dgeapy.read_config_json_file(config_file)
 
     FOLD_CHANGE_THRESHOLD = args.fc
-    P_VALUE_THRESHOLD = args.pvalue
     PADJ_THRESHOLD = args.padj
     PLOT_FORMATS = args.formats
     DATAFRAMES = config_dictionary
-    include_novels = args.g
+    include_novels = args.non_coding
 
-    if len(DATAFRAMES) != 3:
-        sys.exit('\n** dgeapy multiplemuts just supports data from 3' \
+    if len(DATAFRAMES) not in [2, 3, 4]:
+        sys.exit('\n** dgeapy multiplemuts only supports data from 2, 3 or 4' \
                  ' different samples **\n')
 
     for k in DATAFRAMES:
@@ -108,7 +101,7 @@ def main(args=None):
                 raise FileNotFoundError(f"Could not find file: {DATAFRAMES[k]}")
 
     cwd = os.getcwd()
-    output_dir = f"{cwd}/dgeapy_output"
+    output_dir = f"{cwd}/dgeapy_multiplemuts_output"
 
     # Crate a directory for the output. If already exists, add _n to the name.
     output_dir_accumulator = 1
@@ -144,38 +137,40 @@ def main(args=None):
                     na_values=["--", "",]
                     )
 
-        if include_novels is False:
-            df = df[~df.gene_id.str.contains("Novel")]
-            df = df[~df.gene_id.str.contains("sRNA")]
-
-        df = df.set_index('gene_id')
-
         dgeapy.add_fold_change_columns(df)
         dgeapy.add_regulation_columns(df)
 
-        # Dictionary containing names of the columnns of:
-        # FC, log2FC, p-value and padj values.
-        column_names_to_check = dgeapy.column_names_to_check(df)
+        column_names = dgeapy.get_column_names(df)
 
-        # DEG according to FC, pvale and padj values
-        dge_df = dgeapy.filter_FC_PVALUE_PADJ(
+        # TODO: improve this
+        for key in column_names:
+            df = df.rename(columns={column_names[key] : key})
+            column_names[key] = key
+
+        df = df.set_index(column_names['geneID'])
+
+        if include_novels is False:
+            df = df[~df.index.str.contains("Novel")]
+            df = df[~df.index.str.contains("sRNA")]
+
+
+        # DEG according to FC and padj values
+        dge_df = dgeapy.filter_FC_PADJ(
                             dataframe=df,
                             foldchange_threshold=FOLD_CHANGE_THRESHOLD,
-                            foldchange_column_name=column_names_to_check["FoldChange"],
-                            p_value_threshold=P_VALUE_THRESHOLD,
-                            p_value_column_name=column_names_to_check["pvalue"],
+                            foldchange_column_name='FoldChange',
                             padj_threshold=PADJ_THRESHOLD,
-                            padj_column_name=column_names_to_check["padj"],
+                            padj_column_name='padj',
                             )
 
         # Up and Down regulated genes from DEG
-        up_df = dge_df[dge_df[column_names_to_check["Regulation"]] == "Up"]
-        donw_df = dge_df[dge_df[column_names_to_check["Regulation"]] == "Down"]
+        up_df = dge_df[dge_df[column_names["Regulation"]] == "Up"]
+        donw_df = dge_df[dge_df[column_names["Regulation"]] == "Down"]
 
-        sample_data = Sampledata(
+        sample_data = SampleData(
                         name=k,
                         input_df=df,
-                        df_columns=column_names_to_check,
+                        df_columns=column_names,
                         dge_df=dge_df,
                         up_df=up_df,
                         down_df=donw_df
@@ -248,16 +243,38 @@ def main(args=None):
     # the labels for the next venn diagrams we're going to generate.
     # They'll display the actual number of genes considered
     # up and down regulated at the same time.
-    if len(data) == 3:
-        up_regulation_labels = dgeapy.get_gene_ids_set_for_intersections(
+    if len(data) == 2:
+        up_regulation_labels = dgeapy.get_gene_ids_set_for_intersections2(
+                set1=set(data[0].up_df.index),
+                set2=set(data[1].up_df.index),
+                )
+        down_regulation_labels = dgeapy.get_gene_ids_set_for_intersections2(
+                set1=set(data[0].down_df.index),
+                set2=set(data[1].down_df.index),
+                )
+        # Generate the same two diagrams but with the labels
+        dgeapy.generate_venn2_diagram_with_regulation_labels(
+                mutant1_gene_set=set(data[0].dge_df.index),
+                mutant1_name=data[0].name,
+                mutant2_gene_set=set(data[1].dge_df.index),
+                mutant2_name=data[1].name,
+                plot_formats=PLOT_FORMATS,
+                up_regulation_labels=up_regulation_labels,
+                down_regulation_labels=down_regulation_labels,
+                title="Differentially expressed genes",
+                file_path=f"{output_dirs_dict['venn']}/venn_DEG_labels",
+                )
+
+    elif len(data) == 3:
+        up_regulation_labels = dgeapy.get_gene_ids_set_for_intersections3(
                 set1=set(data[0].up_df.index),
                 set2=set(data[1].up_df.index),
                 set3=set(data[2].up_df.index),
                 )
-        down_regulation_labels = dgeapy.get_gene_ids_set_for_intersections(
-                set1=set(data[0].up_df.index),
-                set2=set(data[1].up_df.index),
-                set3=set(data[2].up_df.index),
+        down_regulation_labels = dgeapy.get_gene_ids_set_for_intersections3(
+                set1=set(data[0].down_df.index),
+                set2=set(data[1].down_df.index),
+                set3=set(data[2].down_df.index),
                 )
         # Generate the same two diagrams but with the labels
         dgeapy.generate_venn3_diagram_with_regulation_labels(
@@ -267,6 +284,36 @@ def main(args=None):
                 mutant2_name=data[1].name,
                 mutant3_gene_set=set(data[2].dge_df.index),
                 mutant3_name=data[2].name,
+                plot_formats=PLOT_FORMATS,
+                up_regulation_labels=up_regulation_labels,
+                down_regulation_labels=down_regulation_labels,
+                title="Differentially expressed genes",
+                file_path=f"{output_dirs_dict['venn']}/venn_DEG_labels",
+                )
+
+    elif len(data) == 4:
+        up_regulation_labels = dgeapy.get_gene_ids_set_for_intersections4(
+                set1=set(data[0].up_df.index),
+                set2=set(data[1].up_df.index),
+                set3=set(data[2].up_df.index),
+                set4=set(data[3].up_df.index),
+                )
+        down_regulation_labels = dgeapy.get_gene_ids_set_for_intersections4(
+                set1=set(data[0].down_df.index),
+                set2=set(data[1].down_df.index),
+                set3=set(data[2].down_df.index),
+                set4=set(data[3].down_df.index),
+                )
+        # Generate the same two diagrams but with the labels
+        dgeapy.generate_venn4_diagram_with_regulation_labels(
+                mutant1_gene_set=set(data[0].dge_df.index),
+                mutant1_name=data[0].name,
+                mutant2_gene_set=set(data[1].dge_df.index),
+                mutant2_name=data[1].name,
+                mutant3_gene_set=set(data[2].dge_df.index),
+                mutant3_name=data[2].name,
+                mutant4_gene_set=set(data[3].dge_df.index),
+                mutant4_name=data[3].name,
                 plot_formats=PLOT_FORMATS,
                 up_regulation_labels=up_regulation_labels,
                 down_regulation_labels=down_regulation_labels,

@@ -1,21 +1,19 @@
 #!/usr/bin/env python3
 
-from dgeapy.recover_corrupt_file import recover_corrupted_file
-from dgeapy.utilities import mkconfigs
 from dgeapy.utilities import read_config_json_file
 from dgeapy.add_columns import add_fold_change_columns
 from dgeapy.add_columns import add_regulation_columns
-from dgeapy.add_columns import add_go_columns
-# TODO: maybe remove -> from dgeapy.filter_dataframe import generate_sub_dataframes_3muts
-from dgeapy.filter_dataframe import column_names_to_check
-from dgeapy.filter_dataframe import filter_FC_PVALUE_PADJ
-from dgeapy.filter_dataframe import get_gene_ids_set_for_intersections
-from dgeapy.filter_dataframe import mk_df_for_each_intersection3
+from dgeapy.filter_dataframe import get_column_names
+from dgeapy.filter_dataframe import filter_FC_PADJ
+from dgeapy.filter_dataframe import get_gene_ids_set_for_intersections2
+from dgeapy.filter_dataframe import get_gene_ids_set_for_intersections3
+from dgeapy.filter_dataframe import get_gene_ids_set_for_intersections4
+# from dgeapy.filter_dataframe import mk_df_for_each_intersection3
+from dgeapy.venn_diagrams import generate_venn2_diagram_with_regulation_labels
+from dgeapy.venn_diagrams import generate_venn3_diagram_with_regulation_labels
+from dgeapy.venn_diagrams import generate_venn4_diagram_with_regulation_labels
 from dgeapy.filter_dataframe import mk_venn_upset_and_intersections_dfs
 from dgeapy.filter_dataframe import get_inverted_regulations_and_mk_venns_and_dataframes
 from dgeapy.volcanos import generate_volcano_plot
-from dgeapy.venn_diagrams import generate_venn3_diagram
-from dgeapy.venn_diagrams import generate_venn3_diagram_with_regulation_labels
-from dgeapy.upset_plots import generate_upset_plot
 from dgeapy.sankey_diagrams import generate_sankey_diagram
 

@@ -29,7 +29,7 @@ def add_fold_change_columns(dataframe):
     # Iterate trough the column names using the index numbers.
     for index_num  in range(len(column_names)):
         # If log2FoldChange" is present in the name of the column:
-        if "log2FoldChange" in column_names[index_num]:
+        if "log2FoldChange" in column_names[index_num] or 'log2foldchange' in column_names[index_num]:
 
             # Saving the column name as a variable.
             log2FoldChange_column_name = str(column_names[index_num])
@@ -45,7 +45,7 @@ def add_fold_change_columns(dataframe):
             # Creating the new column name just by replacing "log2FoldChange".
             # from the previous column with "FoldChange".
             new_column_name = log2FoldChange_column_name.replace(
-                "log2FoldChange", 
+                column_names[index_num],
                 "FoldChange",
                 )
             # Inserting the new column into the dataframe.
@@ -81,7 +81,7 @@ def add_regulation_columns(dataframe):
     # Iterate trough the column names using the index numbers.
     for index_num  in range(len(column_names)):
         # If "log2FoldChange" is present in the name of the column:
-        if "log2FoldChange" in column_names[index_num]:
+        if "log2FoldChange" in column_names[index_num] or 'log2foldchange' in column_names[index_num]:
 
             # Saving the column name as a variable.
             log2FoldChange_column_name = str(column_names[index_num])
@@ -89,7 +89,7 @@ def add_regulation_columns(dataframe):
             # Creating the new column name just by replacing "log2FoldChange"
             # from the previous column with "Regulation".
             new_column_name = log2FoldChange_column_name.replace(
-                "log2FoldChange", 
+                column_names[index_num],
                 "Regulation",
                 )
 

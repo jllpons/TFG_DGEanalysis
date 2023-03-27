@@ -20,10 +20,7 @@ def mkconfigs():
             "mutC" : "path/to/mutC.tsv"
             }
     json_mapgenes = {
-                'map' : {
-                    'path' : 'path/to/yourmap.tsv',
-                    'key_to_use' : 'gene IDs column name in <map.tsv> that will appear as geneIDs in the dfs'
-                    },
+                'map' : 'path/to/yourmap.tsv',
                 'strains' : {
                     'yourstrain_1' : {
                         'df' : 'path/to/yourstrain_1.tsv',

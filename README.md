@@ -17,6 +17,7 @@ dgeapy.py is a script that tries to analyse Differential Gene Expression (DGE) d
     - [matplotlib](<https://pypi.org/project/matplotlib/>): low-level manipulations.
     - [seaborn](<https://pypi.org/project/seaborn/>): high-level manipulations.
     - [matplotlib-venn](<https://pypi.org/project/matplotlib-venn/>): venn diagram generation.
+    - [pyvenn](<https://pypi.org/project/venn/>): 4-set venn diagram generation.
     - [UpSetPlot](<https://pypi.org/project/UpSetPlot/0.8.0/>): upset plot generation.
     - [pySankey](<https://github.com/Pierre-Sassoulas/pySankey/tree/main>): sankey diagram generation.
 
@@ -44,22 +45,20 @@ For DGE analyisis of multiple samples you can use:
 
 ```
 > ./dgeapy.py multiplemuts -h
-
 usage: dgeapy.py multiplemuts <config.json>
 
-Differential Gene Expression data analysis between 2 or 3
-'mutant vs. wild' like type experiments.
+Differential Gene Expression data analysis between 2, 3 and 4 'mutant vs. wild' like type
+experiments.
 
 positional arguments:
-  <config.json>        path to JSON configuration file
+  <config.json>     path to JSON configuration file
 
 optional arguments:
-  -h, --help           show this help message and exit
-  --pvalue PVALUE      p-value threshold, default is 0.05
-  --padj PADJ          adjusted p-value threshold, default is 0.05
-  --fc FC              fold change threshold, default is 2.00
-  --formats [FORMATS]  plot formats, defalut is png
-  -g                   include non-coding transcripts
+  -h, --help        show this help message and exit
+  --padj FLOAT      adjusted p-value threshold, default is 0.05
+  --fc FLOAT        fold change threshold, default is 1.50
+  --formats [STR,]  plot formats, defalut is png
+  -n, --non-coding  include non-coding transcripts
 ```
 
 And if you need to map geneIDs between different strains you can use:
