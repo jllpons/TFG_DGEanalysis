@@ -10,6 +10,7 @@ import os
 import sys
 import argparse
 
+import numpy as np
 import pandas as pd
 
 
@@ -46,16 +47,10 @@ def main():
             help='table'
                  )
     input.add_argument(
-            '-i', '--index',
+            '--on',
             metavar='STR',
             type=str,
-            help='<table.tsv> column to take as index'
-            )
-    input.add_argument(
-            '-on',
-            metavar='STR',
-            type=str,
-            help='<map.tsv> column to match <table.tsv> index'
+            help='column name and values on <map.tsv> and <table.tsv> column'
                  )
     # TODO:
     #     - Add output options
@@ -69,12 +64,9 @@ def main():
     if not args.table:
         parser.print_help()
         sys.exit("\n** The <table.tsv> file is required **\n")
-    if not args.index:
-        parser.print_help()
-        sys.exit("\n** The <table.tsv> column to take as index is required. **\n")
     if not args.on:
         parser.print_help()
-        sys.exit("\n** The <map.tsv> column to match file <table.tsv> index is required. **\n")
+        sys.exit("\n** <map.tsv> and <table.tsv> column value is required **\n")
 
     map_file = os.path.abspath(args.map)
     table_file = os.path.abspath(args.table)
@@ -86,11 +78,13 @@ def main():
     map = pd.read_csv(map_file, sep='\t')
     table = pd.read_csv(table_file, sep='\t')
 
+    key = args.on
     if args.map_columns:
         map = map[args.map_columns]
-    map = map.set_index(args.on)
 
-    table = table.set_index(args.index)
+    map['index'] = np.where(map[key].str.endswith('#'), map[key].str[:-1], map[key])
+    map = map.set_index('index')
+    table = table.set_index(key)
 
     out_dir = f'{os.getcwd()}/dgeapy_map_output'
     # Crate a directory for the output. If already exists, add _n to the name.
@@ -115,8 +109,12 @@ def main():
 
     table_mapped = table_mapped.reset_index()
     table_mapped.to_csv(f'{out_dir}/{table_file.split("/")[-1]}_mapped.tsv', sep='\t', index=False)
+    table_mapped.to_excel(f'{out_dir}/{table_file.split("/")[-1]}_mapped.xlsx', index=False)
+
     map_notmapped = map_notmapped.reset_index()
+    map_notmapped = map_notmapped.drop(columns=['index'])
     map_notmapped.to_csv(f'{out_dir}/{map_file.split("/")[-1]}_notmapped.tsv', sep='\t', index=False)
+    map_notmapped.to_excel(f'{out_dir}/{map_file.split("/")[-1]}_notmapped.xlsx', index=False)
 
 if __name__ == "__main__":
     main()
