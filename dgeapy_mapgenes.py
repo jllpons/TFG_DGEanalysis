@@ -1,101 +1,98 @@
 #!/usr/bin/env python3
 
 """
-Script for mapping gene IDs between different strains.
-
-Given a .tsv file that serves as a map and a number of dataframes containing 
-gene IDs, this script returns the dataframes containing only mapped gene IDs.
-
-Returns:
-    Multiple .tsv files that contain the mapped gene IDs for each input 
-    dataframe specified in the configuration JSON file.
-
-Dependencies:
-    - pandas
-    - dgeapy.utilities
+Perform mapping between a mapping file <map.tsv> and a table file <table.tsv>
+based on specified columns. The mapped data is saved to output files in a
+directory created by the script.
 """
 
 import os
 import sys
 import argparse
-from dataclasses import dataclass
 
 import pandas as pd
-
-from dgeapy.utilities import read_config_json_file
-
-
-@dataclass
-class Strain:
-    """Store data related to each strain to map"""
-    df_filename: str
-    df: pd.DataFrame
-    id_col_in_map: str
-    id_col_in_df: str
-
-
 
 
 def main():
 
-    description = """
-    Script for mapping gene IDs between different strains.
-    Uses a TSV file that serves as a map and a number of dataframes
-    containing geneIDs. Returns the dataframes containing only mapped geneIDs.
+    description = """Perform mapping between a mapping file <map.tsv> and
+    a table file <table.tsv> based on specified columns. The mapped data is
+    saved to output files in a directory created by the script.
     """
 
     parser = argparse.ArgumentParser(
-            description=description, usage='dgeapy.py mapgenes <config.json>'
+            description=description, usage='dgeapy.py mapgenes [args]'
             )
 
-    parser.add_argument(
-            "configuration_json_file",
-            metavar="<config.json>",
-            nargs="?",
-            default="",
-            type=str,
-            help="path to JSON configuration file",
-            )
-    parser.add_argument(
-            '-k', '--key',
-            metavar='STR',
-            default='',
+    input = parser.add_argument_group('input')
+    input.add_argument(
+            '-m', '--map',
+            metavar='<map.tsv>',
             type=str,
             help='geneIDs column name in <map.ysv> that  will appear as ' \
-                 '"mapped_geneID" in the generated dataframes. Otherwise ' \
-                 ' strain geneIDs will be used ' \
                  )
-    parser.add_argument(
-            '-s', '--stats',
-            action='store_true',
-            default=False,
-            help='generate a <stats.txt> file'
+    input.add_argument(
+            '-c', '--map-columns',
+            metavar='STR STR',
+            type=str,
+            nargs='+',
+            default=[],
+            help='columns to add, separated by commas and no '
+                 )
+    input.add_argument(
+            '-t', '--table',
+            metavar='<table.tsv>',
+            type=str,
+            help='table'
+                 )
+    input.add_argument(
+            '-i', '--index',
+            metavar='STR',
+            type=str,
+            help='<table.tsv> column to take as index'
             )
-    parser.add_argument(
-            '-u', '--unmapped',
-            action='store_true',
-            default=False,
-            help='save two TSV files containing (1) orphan geneIDs and (2) ' \
-                 'geneIDs that are mapped but not present in all of the input dfs'
-            )
+    input.add_argument(
+            '-on',
+            metavar='STR',
+            type=str,
+            help='<map.tsv> column to match <table.tsv> index'
+                 )
     # TODO:
     #     - Add output options
     #     - Add override option
 
     args = parser.parse_args()
 
-    # Config file stuff
-    if not args.configuration_json_file:
+    if not args.map:
         parser.print_help()
-        sys.exit("\n** The JSON configuration file is required **\n")
+        sys.exit("\n** The <map.tsv> file is required **\n")
+    if not args.table:
+        parser.print_help()
+        sys.exit("\n** The <table.tsv> file is required **\n")
+    if not args.index:
+        parser.print_help()
+        sys.exit("\n** The <table.tsv> column to take as index is required. **\n")
+    if not args.on:
+        parser.print_help()
+        sys.exit("\n** The <map.tsv> column to match file <table.tsv> index is required. **\n")
 
-    config_file = os.path.abspath(args.configuration_json_file)
-    if not os.path.isfile(config_file):
-        raise FileNotFoundError(f"Could not find file: {config_file}")
+    map_file = os.path.abspath(args.map)
+    table_file = os.path.abspath(args.table)
+    if not os.path.isfile(map_file):
+        raise FileNotFoundError(f'Could not find file: {map_file}')
+    if not os.path.isfile(table_file):
+        raise FileNotFoundError(f'Could not find file: {table_file}')
 
-    config_dict = read_config_json_file(config_file)
+    map = pd.read_csv(map_file, sep='\t')
+    table = pd.read_csv(table_file, sep='\t')
 
-    out_dir = f'{os.getcwd()}/dgeapy_map'
+    if args.map_columns:
+        map = map[args.map_columns]
+    map = map.set_index(args.on)
+
+    table = table.set_index(args.index)
+
+    out_dir = f'{os.getcwd()}/dgeapy_map_output'
     # Crate a directory for the output. If already exists, add _n to the name.
     out_dir_accumulator = 1
     if os.path.isdir(out_dir):
@@ -108,100 +105,18 @@ def main():
     else:
         os.mkdir(out_dir)
 
-    map = pd.read_csv(config_dict['map'], sep='\t')
-    # Load data into the dataclass
-    strains = []
-    for s in config_dict['strains']:
-        strains.append(Strain(
-                        df_filename=config_dict['strains'][s]['df'],
-                        df = pd.read_csv(
-                            config_dict['strains'][s]['df'], sep='\t'
-                            ),
-                        id_col_in_map=config_dict['strains'][s]['id_col_in_map'],
-                        id_col_in_df=config_dict['strains'][s]['id_col_in_df'],
-                        ))
+    table_mapped = table.join(map, how='left')
 
-    # The columns we care about
-    strain_cols = [i.id_col_in_map for i in strains]
-    if len(args.key):
-        strain_cols.append(args.key)
+    table_columns = table.columns.values.tolist()
+    map_columns = map.columns.values.tolist()
+    table_mapped = table_mapped.reindex(columns= map_columns + table_columns)
 
-    # Keep only rows in columns we care about that don't contain null values
-    map_only_mapped = map[strain_cols].dropna()
-    # Only keep rows in columns we care about that contain at
-    # least one null value
-    map_only_unmapped = map[map[strain_cols].isnull().any(axis=1)]
+    map_notmapped = map[~map.index.isin(table_mapped.index)]
 
-    # Keep only geneIDs that are present in dfs to map
-    map_only_mapped_present_dfs = map_only_mapped
-    for s in strains:
-        map_only_mapped_present_dfs = map_only_mapped_present_dfs[
-                map_only_mapped_present_dfs[s.id_col_in_map].isin(
-                    s.df[s.id_col_in_df]
-                    )]
-
-    # Keep only mapped geneIDs that are not present in dfs to map
-    map_only_mapped_notpresent_dfs = map_only_mapped[
-            ~map_only_mapped[strain_cols].isin(
-                map_only_mapped_present_dfs[strain_cols]
-                )].dropna()
-
-    strain_mapped_genes = []
-    for s in strains:
-        # New column in df, column name is the same that apper in the map,
-        # values are the same that the ones in geneID column
-        s.df[s.id_col_in_map] = s.df[s.id_col_in_df]
-
-        if len(args.key):
-            k = args.key
-            df = pd.merge(
-                    map_only_mapped_present_dfs[[s.id_col_in_map, k]],
-                    s.df,
-                    on=s.id_col_in_map
-                    )
-            df = df.rename(columns={k : 'mapped_geneID'})
-
-        else:
-            df = pd.merge(
-                    map_only_mapped_present_dfs[s.id_col_in_map],
-                    s.df,
-                    on=s.id_col_in_map
-                    )
-            df = df.rename(columns={s.id_col_in_map : 'mapped_geneID'})
-
-        df = df.set_index('mapped_geneID')
-        df = df.drop(columns=s.id_col_in_df)
-        df.to_csv(f'{out_dir}/{(s.df_filename.split("/"))[-1]}_mapped.tsv', sep='\t')
-
-        strain_mapped_genes.append(len(df.index))
-
-    if args.unmapped is True:
-        map_only_unmapped.to_csv(f'{out_dir}/orphan_geneIDs.tsv', sep='\t')
-        map_only_mapped_notpresent_dfs.to_csv(
-                f'{out_dir}/mapped_notpresent_in_input_dfs.tsv', sep='\t'
-                )
-
-    if args.stats is True:
-        strain_specific_text = []
-
-        for i,s in enumerate(strains):
-            s_text = f'\t- From {len(s.df.index)} genes in "{s.df_filename}", {strain_mapped_genes[i]} where mapped.\n\t'
-
-            strain_specific_text.append(s_text)
-
-        text = f"""
-        dgeapy mapgenes stats:
-
-        - {strain_mapped_genes[0]} genes have been mapped.
-        {''.join(strain_specific_text)}
-
-        - From {len(map.index)} genes provided in the map, {len(map_only_unmapped) + len(map_only_mapped_notpresent_dfs)} have not been mapped:
-            - {len(map_only_unmapped)} genes did not have at least one geneID in one of the columns specified in the <config.json> file.
-            - {len(map_only_mapped_notpresent_dfs.index)} geneIDs where present in all of the columns specified in the input map but could not be found in at least one of the input dataframes.
-        """
-
-        with open(f'{out_dir}/dgeapy_mapgenes_stats.txt', 'w') as handle:
-            handle.write(text)
+    table_mapped = table_mapped.reset_index()
+    table_mapped.to_csv(f'{out_dir}/{table_file.split("/")[-1]}_mapped.tsv', sep='\t', index=False)
+    map_notmapped = map_notmapped.reset_index()
+    map_notmapped.to_csv(f'{out_dir}/{map_file.split("/")[-1]}_notmapped.tsv', sep='\t', index=False)
 
 if __name__ == "__main__":
     main()
