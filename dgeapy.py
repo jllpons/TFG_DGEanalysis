@@ -24,6 +24,7 @@ usage: dgeapy.py <command> [options]
 
     utilities:
         mapgenes        map geneIDs using a <map.tsv> file
+        joindfs         perform a left join on two tables using common column
         mkconfigs       create config.json file samples
 
     options:
@@ -47,6 +48,10 @@ usage: dgeapy.py <command> [options]
 
         elif cmd == "mapgenes":
             subcmd = ["python", f"{dgeapy_path}/dgeapy_mapgenes.py",] + sys.argv[2:]
+            subprocess.run(subcmd)
+
+        elif cmd == "joindfs":
+            subcmd = ["python", f"{dgeapy_path}/dgeapy_joindfs.py",] + sys.argv[2:]
             subprocess.run(subcmd)
 
         elif cmd == "mkconfigs":
