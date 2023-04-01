@@ -39,13 +39,13 @@ def main():
             '-t1', '--table1',
             metavar='<table_1.tsv>',
             type=str,
-            help='first table, where the join will be applied'
+            help='left table, where the join will be applied'
                  )
     input.add_argument(
             '-t2', '--table2',
             metavar='<table_2.tsv>',
             type=str,
-            help='second table, matching keys in this table will be joined'
+            help='right table, matching keys in this table will be joined'
                  )
     input.add_argument(
             '-on',
