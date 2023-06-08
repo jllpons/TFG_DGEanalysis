@@ -31,17 +31,21 @@ dgeapy: Script for Differential Gene Expression data analyisis at different leve
 usage: dgeapy.py <command> [options]
 
     dataframe analyisis:
-        multiplemuts    analyze a dataframe contaning 3 mutants
+        multiplemuts        analyze a dataframe contaning 3 mutants
 
     utilities:
-        mapgenes        map geneIDs using a <map.tsv> file
-        mkconfigs       create config.json file samples
+        assert-function     assign function to each gene based on a preestablished list of GO codes and KEGG pathways to define each function.
+        dropNaN-in-column   drop all NaN values in a specific column
+        go2ancestors        obtain all of the GO ancestors from GO codes and store them in a new column
+        joindfs             perform a left join on two tables using common column
+        mapgenes            map geneIDs using a <map.tsv> file
+        mkconfigs           create config.json file samples
 
     options:
         -h, --help
 ```
 
-For DGE analyisis of multiple samples you can use:
+The main DGE analyisis is done with the `multiplemuts`  command:
 
 ```
 > ./dgeapy.py multiplemuts -h
@@ -61,25 +65,4 @@ optional arguments:
   -n, --non-coding  include non-coding transcripts
 ```
 
-And if you need to map geneIDs between different strains you can use:
-
-```
-> ./dgeapy.py mapgenes -h
-usage: dgeapy.py mapgenes <config.json>
-
-Script for mapping gene IDs between different strains. Uses a TSV file that
-serves as a map and a number of dataframes containing geneIDs. Returns the
-dataframes containing only mapped geneIDs.
-
-positional arguments:
-  <config.json>      path to JSON configuration file
-
-optional arguments:
-  -h, --help         show this help message and exit
-  -k STR, --key STR  geneIDs column name that will appear as "mapped_geneID"
-                     in the generated dataframes. Otherwise strain geneIDs will be used
-  -s, --stats        generate a <stats.txt> file.
-  -u, --unmapped     save two TSV files containing (1) orphan geneIDs and (2) geneIDs
-                     that are mapped but not present in input dfs> ./dgeapy.py mapgenes -h
-```
-
+Although it is very WIP, you can check how more advanced plots can be done with specific scripts found in the `advanced_plots` directory.

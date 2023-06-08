@@ -26,6 +26,9 @@ def add_fold_change_columns(dataframe):
     # we've been adding.
     accumulator = 1
 
+    if 'FoldChange' in column_names:
+        return None
+
     # Iterate trough the column names using the index numbers.
     for index_num  in range(len(column_names)):
         # If log2FoldChange" is present in the name of the column:
@@ -77,6 +80,9 @@ def add_regulation_columns(dataframe):
     # We set an accumulator so we can keep track of the column names we've
     # been adding.
     accumulator = 2
+
+    if 'Regulation' in column_names:
+        return None
 
     # Iterate trough the column names using the index numbers.
     for index_num  in range(len(column_names)):
@@ -132,131 +138,5 @@ def add_regulation_columns(dataframe):
             # will be placed after two positions of the corresponding
             # "log2FoldChange" column.
             accumulator += 1
-
-
-def get_gene_IDs_list_from_GO_df(
-        df,
-        row_index,
-        ):
-    """
-    The GO dataframe has 3 columns related to GeneIDs:
-        - geneID
-        - Up_gene_id
-        - Down_gene_id
-
-    This function checks these 3, obtains the gene IDs and returns them in a
-    list of unique values.
-    """
-
-    gene_IDs = []
-
-    gene_IDs.extend(df["geneID"][row_index].split("/"))
-    # The following is done because sometimes those cells are empty,
-    # and that would rise an error.
-    try:
-        gene_IDs.extend(df["Up_Gene_id"][row_index].split("/"))
-    except:
-        pass
-    try:
-        gene_IDs.extend(df["Down_Gene_id"][row_index].split("/"))
-    except:
-        pass
-
-    gene_IDs_uniq_values = list(set(gene_IDs))
-
-    return gene_IDs_uniq_values # list(set(gene_IDs))
-
-
-def create_go_dict(df):
-    """
-    Takes a GO related dataframe and returns a dictionary that maps each gene ID
-    with all of it's corresponding Gene Ontology data:
-        - gene_ID as primary keys. Each one will contain:
-            - go_category
-            - go_ID
-            - go_description
-    """
-
-    go_dictionary = {}
-    # Using index for accesing each row
-    for i in range(len(df)):
-        go_category = df["Category"][i]
-        go_ID = df["GOID"][i]
-        go_descrition = df["Description"][i]
-
-        gene_IDs = get_gene_IDs_list_from_GO_df(df=df, row_index=i)
-
-        for gene in gene_IDs:
-            # Some genes have more than one GO annotation.
-            if gene in go_dictionary:
-                n_of_go_annotations = len(go_dictionary[gene])
-                go_dictionary[gene][f"go_annotation_{n_of_go_annotations}"] = {
-                        "go_category" : go_category,
-                        "go_ID" : go_ID,
-                        "go_description" : go_descrition,
-                        }
-            else:
-                go_dictionary[gene] = {
-                        "go_annotation_0" : {
-                            "go_category" : go_category,
-                            "go_ID" : go_ID,
-                            "go_description" : go_descrition,
-                            }
-                        }
-
-    return go_dictionary
-
-
-def add_go_columns(
-        df,
-        go_df,
-        ):
-    """
-    Adds 3 columns:
-        - GO_category
-        - GO_ID
-        - GO_description
-    Also adds the corresponding information for each gene. If one gene has more
-    than one GO annotation, they'll be stacked and separeted with "/".
-    Returns the dataframe.
-    """
-
-    go_dictionary = create_go_dict(go_df)
-
-    df = pd.concat([
-            df,
-            pd.DataFrame(columns=["GO_category", "GO_ID", "GO_description"])
-            ])
-
-    for gene in go_dictionary:
-        gene_index = np.where(df["gene_id"] == gene)
-        i = int(gene_index[0])
-        # If this gene only has one GO annotation:
-        if len(go_dictionary[gene]) == 1:
-            df.at[i, "GO_category"] = go_dictionary[gene][
-                    "go_annotation_0"]["go_category"]
-            df.at[i, "GO_ID"] = go_dictionary[gene][
-                    "go_annotation_0"]["go_ID"]
-            df.at[i, "GO_description"] = go_dictionary[gene][
-                    "go_annotation_0"]["go_description"]
-        else:
-            go_category_list = []
-            go_ID_list = []
-            go_description_list = []
-            n_of_go_annotations = len(go_dictionary[gene])
-            for i in range(n_of_go_annotations):
-                go_category_list.append(go_dictionary[gene][
-                    f"go_annotation_{i}"]["go_category"])
-                go_ID_list.append(go_dictionary[gene][
-                    f"go_annotation_{i}"]["go_ID"])
-                go_description_list.append(go_dictionary[gene][
-                    f"go_annotation_{i}"]["go_description"])
-
-            df.at[i, "GO_category"] = "/".join(go_category_list)
-            df.at[i, "GO_ID"] = "/".join(go_ID_list)
-            df.at[i, "GO_description"] = "/".join(go_description_list)
-
-    return df
-
 
 

@@ -5,7 +5,6 @@
 
 import pdb
 
-
 import os
 
 import pandas as pd
@@ -83,7 +82,7 @@ def get_column_names(dataframe):
     # TODO: add more possibilities to each column name
     # For each name in the column names list.
     for name in column_names:
-        if any([x in name for x in ['gene_id', 'Gene', 'mapped_geneID']]):
+        if any([x in name for x in ['gene_id', 'Gene', 'mapped_geneID', 'geneID']]):
             column_names_to_check['geneID'] = name
         elif any([x in name for x in ['log2FoldChange', 'log2foldchange']]):
             column_names_to_check["log2FoldChange"] = name
@@ -95,12 +94,11 @@ def get_column_names(dataframe):
             column_names_to_check["padj"] = name
         elif "Regulation" in name:
             column_names_to_check["Regulation"] = name
-        elif any([x in name for x in ['gene_description', 'hypothetical protein']]):
+        elif any([x in name for x in ['gene_description', 'hypothetical protein', 'Description']]):
             column_names_to_check['Description'] = name
-        elif 'gene_strand' in name:
-            column_names_to_check['gene_strand'] = name
-        elif 'gene_lenght' in name:
-            column_names_to_check['gene_lenght'] = name
+        else:
+            # Lots of changes since the initial design
+            column_names_to_check[name] = name
 
     return column_names_to_check
 
@@ -286,6 +284,7 @@ def sort_df(df):
     pvalue = []
     padj = []
     gene_info = []
+    go_annotations = []
 
     # There's probably a better way of doing this
     for i in column_names:
@@ -317,6 +316,10 @@ def sort_df(df):
             gene_info.append(i)
         elif "tf_family" in i:
             gene_info.append(i)
+        elif "GO" in i:
+            go_annotations.append(i)
+        else:
+            gene_info.append(i)
 
     # We have the column names goruped so we can choos the ordrer. Gene info
     # columns have the same values so we only take the first 8.
@@ -328,6 +331,7 @@ def sort_df(df):
             + pvalue
             + padj
             + gene_info
+            + go_annotations
             )
 
     df = df[new_colums_names]
@@ -451,20 +455,21 @@ def mk_df_for_each_intersection3(
             )
 
     # Columns that the generated dataframes will contain.
-    columns = [
-            'log2FoldChange',
-            'FoldChange',
-            'padj',
-            'pvalue',
-            'Regulation',
-            'Description',
-            ]
-    mutant1_df = data[0].dge_df[columns]
-    mutant2_df = data[1].dge_df[columns]
-    mutant3_df = data[2].dge_df[columns]
-    for col in columns:
+    columns1 = list(data[0].df_columns.keys())
+    columns1.remove('index')
+    columns2 = list(data[1].df_columns.keys())
+    columns2.remove('index')
+    columns3 = list(data[2].df_columns.keys())
+    columns3.remove('index')
+
+    mutant1_df = data[0].dge_df[columns1]
+    mutant2_df = data[1].dge_df[columns2]
+    mutant3_df = data[2].dge_df[columns3]
+    for col in columns1:
         mutant1_df = mutant1_df.rename(columns={col : f'{data[0].name}_{col}'})
+    for col in columns2:
         mutant2_df = mutant2_df.rename(columns={col : f'{data[1].name}_{col}'})
+    for col in columns3:
         mutant3_df = mutant3_df.rename(columns={col : f'{data[2].name}_{col}'})
 
     # For each one of the intersections
@@ -472,8 +477,8 @@ def mk_df_for_each_intersection3(
 
         # Making a dataframe containing only the gene IDs presents
         # In that intersection. Also setting the gene IDs as index.
-        df = pd.DataFrame(data={"geneID" : list(intersections_dict[key])})
-        df = df.set_index("geneID")
+        df = pd.DataFrame(data={"index" : list(intersections_dict[key])})
+        df = df.set_index("index")
 
         # If first bit is 1, there're gene IDs from the 1st mutant DE genes
         # that are present in that intersection. So we take the
@@ -484,7 +489,7 @@ def mk_df_for_each_intersection3(
             df = pd.merge(
                     df,
                     mutant1_df,
-                    on="geneID",
+                    on="index",
                     )
 
         # The second bit being 1 means there're gene IDs form the 2nd mutant
@@ -493,7 +498,7 @@ def mk_df_for_each_intersection3(
             df = pd.merge(
                     df,
                     mutant2_df,
-                    on="geneID",
+                    on="index",
                     )
 
         # The third bit being 1 means there're gene IDs form the 3rd mutant
@@ -502,7 +507,7 @@ def mk_df_for_each_intersection3(
             df = pd.merge(
                     df,
                     mutant3_df,
-                    on="geneID",
+                    on="index",
                     )
 
         # We sort the columns for a cleaner visualization
@@ -547,22 +552,26 @@ def mk_df_for_each_intersection4(
             )
 
     # Columns that the generated dataframes will contain.
-    columns = [
-            'log2FoldChange',
-            'FoldChange',
-            'padj',
-            'pvalue',
-            'Regulation',
-            'Description',
-            ]
-    mutant1_df = data[0].dge_df[columns]
-    mutant2_df = data[1].dge_df[columns]
-    mutant3_df = data[2].dge_df[columns]
-    mutant4_df = data[3].dge_df[columns]
-    for col in columns:
+    columns1 = list(data[0].df_columns.keys())
+    columns1.remove('index')
+    columns2 = list(data[1].df_columns.keys())
+    columns2.remove('index')
+    columns3 = list(data[2].df_columns.keys())
+    columns3.remove('index')
+    columns4 = list(data[3].df_columns.keys())
+    columns4.remove('index')
+
+    mutant1_df = data[0].dge_df[columns1]
+    mutant2_df = data[1].dge_df[columns2]
+    mutant3_df = data[2].dge_df[columns3]
+    mutant4_df = data[3].dge_df[columns4]
+    for col in columns1:
         mutant1_df = mutant1_df.rename(columns={col : f'{data[0].name}_{col}'})
+    for col in columns2:
         mutant2_df = mutant2_df.rename(columns={col : f'{data[1].name}_{col}'})
+    for col in columns3:
         mutant3_df = mutant3_df.rename(columns={col : f'{data[2].name}_{col}'})
+    for col in columns4:
         mutant4_df = mutant4_df.rename(columns={col : f'{data[3].name}_{col}'})
 
     # For each one of the intersections
@@ -570,8 +579,8 @@ def mk_df_for_each_intersection4(
 
         # Making a dataframe containing only the gene IDs presents
         # In that intersection. Also setting the gene IDs as index.
-        df = pd.DataFrame(data={"geneID" : list(intersections_dict[key])})
-        df = df.set_index("geneID")
+        df = pd.DataFrame(data={"index" : list(intersections_dict[key])})
+        df = df.set_index("index")
 
         # If first bit is 1, there're gene IDs from the 1st mutant DE genes
         # that are present in that intersection. So we take the
@@ -582,7 +591,7 @@ def mk_df_for_each_intersection4(
             df = pd.merge(
                     df,
                     mutant1_df,
-                    on="geneID",
+                    on="index",
                     )
 
         # The second bit being 1 means there're gene IDs form the 2nd mutant
@@ -591,7 +600,7 @@ def mk_df_for_each_intersection4(
             df= pd.merge(
                     df,
                     mutant2_df,
-                    on="geneID",
+                    on="index",
                     )
 
         # The third bit being 1 means there're gene IDs form the 3rd mutant
@@ -600,7 +609,7 @@ def mk_df_for_each_intersection4(
             df = pd.merge(
                     df,
                     mutant3_df,
-                    on="geneID",
+                    on="index",
                     )
 
         # The fourth bit being 1 means there're gene IDs form the 4th mutant
@@ -609,7 +618,7 @@ def mk_df_for_each_intersection4(
             df = pd.merge(
                     df,
                     mutant4_df,
-                    on="geneID",
+                    on="index",
                     )
 
         # We sort the columns for a cleaner visualization

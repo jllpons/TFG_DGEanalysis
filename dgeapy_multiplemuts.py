@@ -90,7 +90,7 @@ def main():
     DATAFRAMES = config_dictionary
     include_novels = args.non_coding
 
-    if len(DATAFRAMES) not in [2, 3, 4]:
+    if len(DATAFRAMES) not in [1, 2, 3, 4]:
         sys.exit('\n** dgeapy multiplemuts only supports data from 2, 3 or 4' \
                  ' different samples **\n')
 
@@ -129,13 +129,20 @@ def main():
         sample_df_dir = f'{output_dirs_dict["df"]}/{k}'
         os.mkdir(sample_df_dir)
 
-        df = pd.read_csv(
-                    DATAFRAMES[k],
-                    sep="\t",
-                    na_values=["--", "",]
-                    )
+        if DATAFRAMES[k].endswith(".xlsx"):
+            df = pd.read_excel(
+                        DATAFRAMES[k],
+                        na_values=["--", "",]
+                        )
+        else:
+            df = pd.read_csv(
+                        DATAFRAMES[k],
+                        sep="\t",
+                        na_values=["--", "",]
+                        )
 
         dgeapy.add_fold_change_columns(df)
+
         dgeapy.add_regulation_columns(df)
 
         column_names = dgeapy.get_column_names(df)
@@ -145,14 +152,17 @@ def main():
             df = df.rename(columns={column_names[key] : key})
             column_names[key] = key
 
-        df = df.set_index(column_names['geneID'])
+        df = df.set_index(column_names['index'])
 
         if include_novels is False:
             df = df[~df.index.str.contains("Novel")]
             df = df[~df.index.str.contains("sRNA")]
 
+        # Sometime one old locus tag belongs to two new locus tag so we have
+        # to remove one
+        df = df.loc[~df.index.duplicated(keep='first')]
 
-        # DEG according to FC and padj values
+        # DEG according to FC and padj value3
         dge_df = dgeapy.filter_FC_PADJ(
                             dataframe=df,
                             foldchange_threshold=FOLD_CHANGE_THRESHOLD,
@@ -201,7 +211,7 @@ def main():
                                 f'{sample_df_dir}/{sample_data.name}_DOWN.tsv',
                                 sep="\t",
                                 )
-        sample_data.dge_df.to_excel(
+        sample_data.down_df.to_excel(
                                 f'{sample_df_dir}/{sample_data.name}_DOWN.xlsx',
                                 )
 
@@ -213,6 +223,8 @@ def main():
                 padj_threshold=PADJ_THRESHOLD,
                 plot_formats=PLOT_FORMATS,
                 )
+    if len(data) == 1:
+        sys.exit()
 
     # Sankey diagrams
     dgeapy.generate_sankey_diagram(

@@ -27,6 +27,9 @@ def generate_venn2_diagram(
 
     set_names = [mutant1_name, mutant2_name]
 
+    # FIXME
+    set_names = ["", ""]
+
     venn2(set_array[0:2], set_names[0:2])
 
     plt.title(title)
@@ -38,6 +41,7 @@ def generate_venn2_diagram(
             plt.savefig(f"{path}_transparent-bg.{format}", dpi=300, transparent=True)
 
     plt.close()
+
 
     venn2_unweighted(set_array[0:3], set_names[0:3])
 
@@ -166,7 +170,13 @@ def generate_venn3_diagram(
 
     set_array = [mutant1_gene_set, mutant2_gene_set, mutant3_gene_set]
 
-    set_names = [mutant1_name, mutant2_name, mutant3_name]
+    deletion = r'$\Delta$'
+
+    set_names = [
+            f'{deletion}{mutant1_name}',
+            f'{deletion}{mutant2_name}',
+            f'{deletion}{mutant3_name}',
+            ]
 
     venn3(set_array[0:3], set_names[0:3])
 
@@ -222,7 +232,13 @@ def generate_venn3_diagram_with_regulation_labels(
 
     set_array = [mutant1_gene_set, mutant2_gene_set, mutant3_gene_set]
 
-    set_names = [mutant1_name, mutant2_name, mutant3_name]
+    deletion = r'$\Delta$'
+
+    set_names = [
+            f'{deletion}{mutant1_name}',
+            f'{deletion}{mutant2_name}',
+            f'{deletion}{mutant3_name}',
+            ]
 
     # Preparing the lables.
     label_100 = (
@@ -356,11 +372,13 @@ def generate_venn4_diagram(
 
     plt.style.use(['default'])
 
+    deletion = r'$\Delta$'
+    
     dataset_dict = {
-            mutant1_name : mutant1_gene_set,
-            mutant2_name : mutant2_gene_set,
-            mutant3_name : mutant3_gene_set,
-            mutant4_name : mutant4_gene_set,
+            mutant1_name.replace('del', deletion) : mutant1_gene_set,
+            mutant2_name.replace('del', deletion) : mutant2_gene_set,
+            mutant3_name.replace('del', deletion) : mutant3_gene_set,
+            mutant4_name.replace('del', deletion) : mutant4_gene_set,
             }
     figure = venn(
             dataset_dict,
@@ -368,7 +386,7 @@ def generate_venn4_diagram(
             hint_hidden=False,
             figsize=(8, 8),
             fontsize=10,
-            legend_loc="best",
+            legend_loc=None,
             ax=None,
             )
 
@@ -549,11 +567,14 @@ def generate_venn4_diagram_with_regulation_labels(
                 ),
             }
 
+
+    deletion = r'$\Delta$'
+    
     dataset_dict = {
-            mutant1_name : mutant1_gene_set,
-            mutant2_name : mutant2_gene_set,
-            mutant3_name : mutant3_gene_set,
-            mutant4_name : mutant4_gene_set,
+            mutant1_name.replace('del', deletion) : mutant1_gene_set,
+            mutant2_name.replace('del', deletion) : mutant2_gene_set,
+            mutant3_name.replace('del', deletion) : mutant3_gene_set,
+            mutant4_name.replace('del', deletion) : mutant4_gene_set,
             }
 
     petal_labels = generate_petal_labels(dataset_dict.values())

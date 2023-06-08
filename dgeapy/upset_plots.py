@@ -39,6 +39,7 @@ def generate_upset_plot(
                         show_counts="{:d}",
                         sort_by="cardinality",
                         element_size=55,
+                        sort_categories_by='-input',
                         ).plot()
 
         plt.suptitle(title)
@@ -69,6 +70,7 @@ def generate_upset_plot(
                         show_counts="{:d}",
                         sort_by="cardinality",
                         element_size=55,
+                        sort_categories_by='-input',
                         ).plot()
 
         plt.suptitle(title)
@@ -96,6 +98,7 @@ def generate_upset_plot(
                         subset_size="count",
                         show_counts="{:d}",
                         sort_by="cardinality",
+                        sort_categories_by='-input',
                         element_size=55,
                         ).plot()
 

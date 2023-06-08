@@ -20,12 +20,15 @@ dgeapy: Script for Differential Gene Expression data analyisis at different leve
 usage: dgeapy.py <command> [options]
 
     dataframe analyisis:
-        multiplemuts    analyze a dataframe contaning 3 mutants
+        multiplemuts        analyze a dataframe contaning 3 mutants
 
     utilities:
-        mapgenes        map geneIDs using a <map.tsv> file
-        joindfs         perform a left join on two tables using common column
-        mkconfigs       create config.json file samples
+        assert-function     assign function to each gene based on a preestablished list of GO codes and KEGG pathways to define each function.
+        dropNaN-in-column   drop all NaN values in a specific column
+        go2ancestors        obtain all of the GO ancestors from GO codes and store them in a new column
+        joindfs             perform a left join on two tables using common column
+        mapgenes            map geneIDs using a <map.tsv> file
+        mkconfigs           create config.json file samples
 
     options:
         -h, --help
@@ -46,12 +49,24 @@ usage: dgeapy.py <command> [options]
             subcmd = ["python", f"{dgeapy_path}/dgeapy_multiplemuts.py",] + sys.argv[2:]
             subprocess.run(subcmd)
 
-        elif cmd == "mapgenes":
-            subcmd = ["python", f"{dgeapy_path}/dgeapy_mapgenes.py",] + sys.argv[2:]
+        elif cmd == "assert-function":
+            subcmd = ["python", f"{dgeapy_path}/dgeapy_assert-function.py",] + sys.argv[2:]
+            subprocess.run(subcmd)
+
+        elif cmd == "dropNaN-in-column":
+            subcmd = ["python", f"{dgeapy_path}/dgeapy_dropNaN-in-column.py",] + sys.argv[2:]
+            subprocess.run(subcmd)
+
+        elif cmd == "go2ancestors":
+            subcmd = ["python", f"{dgeapy_path}/dgeapy_go2ancestors.py",] + sys.argv[2:]
             subprocess.run(subcmd)
 
         elif cmd == "joindfs":
             subcmd = ["python", f"{dgeapy_path}/dgeapy_joindfs.py",] + sys.argv[2:]
+            subprocess.run(subcmd)
+
+        elif cmd == "mapgenes":
+            subcmd = ["python", f"{dgeapy_path}/dgeapy_mapgenes.py",] + sys.argv[2:]
             subprocess.run(subcmd)
 
         elif cmd == "mkconfigs":

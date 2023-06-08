@@ -23,11 +23,22 @@ def generate_regulation_countplot(
             3) Under the p-vale and above the foldchange threshold.
     """
 
+    # Setting the size
+    plt.figure(figsize=(10,6))
     count_plot = sns.countplot(
-                        x=data,
+                        y=data,
                         palette=("silver", "cornflowerblue", "indianred"),
                         order=hue_order,
+                        width=0.4,
                         )
+
+# TODO: show percentages
+#     percentage = [42.13, 29.13, 27.98]
+#     patches = count_plot.patches
+#     for i in range(len(patches)):
+#        y = patches[i].get_x() + patches[i].get_width()/2
+#        x = patches[i].get_height()+2
+#        count_plot.annotate('{:.2f}%'.format(percentage[i]), (x, y), ha='center')
 
     title = (
             name
@@ -138,6 +149,8 @@ def generate_volcano_plot(
     # Creating the plot
     volcano = sns.scatterplot(
             data=df,
+            s=15,
+            linewidth=0.2,
             x=log2FC_column,
             y="-log10(padj)",
             hue="color",
@@ -178,15 +191,17 @@ def generate_volcano_plot(
             volcano,
             loc=1,
             bbox_to_anchor=(1.4,0.5),
-            frameon=False,
+            #frameon=False,
             )
 
     # Label for x axis
     plt.xlabel("$log_{2}$ Fold change", size=12)
     # Label for y axis
     plt.ylabel("-$log_{10}$ Adjusted p-value", size=12)
+
+    deletion = r'$\Delta$'
     # Title for the plot
-    plt.title(f"{data.name} vs WT")
+    plt.title('Stationary ' + r'$vs.$' + ' Log phase')
 
     fig = volcano.get_figure()
 
