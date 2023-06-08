@@ -65,4 +65,8 @@ optional arguments:
   -n, --non-coding  include non-coding transcripts
 ```
 
+### Ploting
+
+Many plots can be done with the `multiplemuts`  command.
+
 Although it is very WIP, you can check how more advanced plots can be done with specific scripts found in the `advanced_plots` directory.
