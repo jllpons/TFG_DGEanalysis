@@ -1,6 +1,8 @@
 # DGEAPY: Differential Gene Expression Analysis using Python
 
-**NOTE**: This repository contains all of the scripts I've created for my Bachelor's End of Degree Project. The main motivation is being able to share what I've done and serve as a way for me to gain experience with the git version control system and remote repositories. Thus, **don't expect any fully functional and mantained program**.
+**NOTE**: This repository contains all of the scripts I've created for my Bachelor's End of Degree Project.
+
+Some of them have been redesigned in [jllpons/dgeapy](<https://github.com/jllpons/dgeapy>) to create a set of tools that try to analyze RNAseq data at different levels.
 
 ---
 
